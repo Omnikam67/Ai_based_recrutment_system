@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-header">
+  <div>
+    <p class="eyebrow">HR Intelligence</p>
+    <h1>Recruitment Dashboard</h1>
+  </div>
+  <div class="header-actions">
+    <a class="btn" href="/candidates/add">+ Add Candidate</a>
+    <a class="btn secondary" href="/jobs/add">+ Add Job</a>
+  </div>
+</section>
+
+<div class="cards">
+  <div class="stat-card">
+    <span class="stat-label">Total Candidates</span>
+    <b>{{ candidates }}</b>
+  </div>
+  <div class="stat-card">
+    <span class="stat-label">Open Jobs</span>
+    <b>{{ jobs }}</b>
+  </div>
+  <div class="stat-card">
+    <span class="stat-label">Applications</span>
+    <b>{{ applications }}</b>
+  </div>
+  <div class="stat-card">
+    <span class="stat-label">Shortlisted</span>
+    <b>{{ shortlisted }}</b>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-header">
+    <h2>Top Candidate Matches</h2>
+  </div>
+  <table>
+    <thead>
+      <tr><th>Candidate</th><th>Job</th><th>AI Score</th></tr>
+    </thead>
+    <tbody>
+      {% for r in top %}
+      <tr><td>{{ r.name }}</td><td>{{ r.job_title }}</td><td>{{ "%.2f"|format(r.overall_score) }}%</td></tr>
+      {% else %}
+      <tr><td colspan="3" class="empty-state">Run candidate analysis to generate rankings.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

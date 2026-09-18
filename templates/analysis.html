@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="analysis-header">
+  <p class="eyebrow">Candidate Review</p>
+  <h1>{{ result.candidate.name }} → {{ result.job.job_title }}</h1>
+</section>
+
+<div class="score-card">
+  <div class="score-value">{{ "%.2f"|format(result.overall_score) }}%</div>
+  <div class="score-caption">AI recommendation score</div>
+</div>
+
+<div class="metrics">
+  <div><span>Skill Match</span><b>{{ result.skill_score }}%</b></div>
+  <div><span>Experience</span><b>{{ result.experience_score }}%</b></div>
+  <div><span>Education</span><b>{{ result.education_score }}%</b></div>
+  <div><span>NLP Similarity</span><b>{{ result.nlp_similarity }}%</b></div>
+</div>
+
+<div class="panel split-layout">
+  <div>
+    <h2>Matched Skills</h2>
+    <ul class="check-list">
+      {% for x in result.matched %}
+      <li>{{ x.skill_name }} — {{ x.required_level }}</li>
+      {% else %}
+      <li>No strong matches identified.</li>
+      {% endfor %}
+    </ul>
+  </div>
+  <div>
+    <h2>Skill Gaps</h2>
+    <ul class="warning-list">
+      {% for x in result.missing %}
+      <li>{{ x.skill_name }} — Required: {{ x.required_level }}</li>
+      {% else %}
+      <li>No major missing skills.</li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+
+<div class="panel">
+  <h2>AI / ML Prediction</h2>
+  <p><strong>Prediction:</strong> {{ 'Selected' if result.ml_prediction.prediction == 1 else 'Not Selected' }}</p>
+  <p><strong>Selection Probability:</strong> {{ result.ml_prediction.probability }}%</p>
+</div>
+{% endblock %}

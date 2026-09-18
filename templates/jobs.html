@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="heading">
+  <h1>Jobs</h1>
+  <a class="btn" href="/jobs/add">+ Add Job</a>
+</div>
+
+<div class="panel">
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Job</th>
+        <th>Company</th>
+        <th>Min Experience</th>
+        <th>Status</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for j in jobs %}
+      <tr>
+        <td>{{ j.job_id }}</td>
+        <td>{{ j.job_title }}</td>
+        <td>{{ j.company }}</td>
+        <td>{{ j.min_experience }} yrs</td>
+        <td><span class="status-badge">{{ j.status }}</span></td>
+        <td>
+          <div class="row-actions">
+            <a class="btn small" href="/rank/{{ j.job_id }}">Ranking</a>
+            <a class="btn secondary small" href="/jobs/{{ j.job_id }}/apply">Apply</a>
+          </div>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" class="empty-state">No jobs available yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

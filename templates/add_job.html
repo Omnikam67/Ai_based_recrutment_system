@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="form-panel">
+  <h1>Add Job</h1>
+  <form method="post" class="form">
+    <label>
+      <span>Job title</span>
+      <input name="job_title" placeholder="Job title" required>
+    </label>
+    <label>
+      <span>Company</span>
+      <input name="company" placeholder="Company" required>
+    </label>
+    <label>
+      <span>Location</span>
+      <input name="location" placeholder="Location">
+    </label>
+    <label>
+      <span>Minimum experience (years)</span>
+      <input name="min_experience" type="number" step="0.1" min="0" placeholder="Minimum experience">
+    </label>
+    <label>
+      <span>Job description</span>
+      <textarea name="description" rows="7" placeholder="Job description"></textarea>
+    </label>
+    <label>
+      <span>Required skills</span>
+      <input name="skills" placeholder="Required skills, comma separated" required>
+    </label>
+    <button class="btn" type="submit">Save Job</button>
+  </form>
+</section>
+{% endblock %}

@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI Talent Acquisition</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<nav class="topbar">
+  <div class="brand-wrap">
+    <div class="brand">AI Talent Acquisition</div>
+    <small>Skill Gap Analytics</small>
+  </div>
+  <div class="nav-links">
+    <a href="/">Dashboard</a>
+    <a href="/candidates">Candidates</a>
+    <a href="/jobs">Jobs</a>
+    <a href="/applications">Applications</a>
+  </div>
+</nav>
+<main>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="flash {{ category }}">{{ message }}</div>
+    {% endfor %}
+  {% endwith %}
+  {% block content %}{% endblock %}
+</main>
+</body>
+</html>

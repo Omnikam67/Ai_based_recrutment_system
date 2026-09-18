@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="form-panel">
+  <h1>Add Candidate</h1>
+  <form method="post" class="form">
+    <label>
+      <span>Full name</span>
+      <input name="name" placeholder="Full name" required>
+    </label>
+    <label>
+      <span>Email</span>
+      <input name="email" type="email" placeholder="Email" required>
+    </label>
+    <label>
+      <span>Phone</span>
+      <input name="phone" placeholder="Phone">
+    </label>
+    <label>
+      <span>Education</span>
+      <input name="education" placeholder="Education">
+    </label>
+    <label>
+      <span>Experience (years)</span>
+      <input name="experience_years" type="number" step="0.1" min="0" placeholder="Experience (years)">
+    </label>
+    <label>
+      <span>Location</span>
+      <input name="location" placeholder="Location">
+    </label>
+    <label>
+      <span>Resume / skills text</span>
+      <textarea name="resume_text" rows="8" placeholder="Paste resume text here..."></textarea>
+    </label>
+    <button class="btn" type="submit">Save Candidate</button>
+  </form>
+</section>
+{% endblock %}

@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="heading">
+  <h1>Candidates</h1>
+  <a class="btn" href="/candidates/add">+ Add Candidate</a>
+</div>
+
+<div class="panel">
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Education</th>
+        <th>Experience</th>
+        <th>Location</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in candidates %}
+      <tr>
+        <td>{{ c.candidate_id }}</td>
+        <td>{{ c.name }}</td>
+        <td>{{ c.email }}</td>
+        <td>{{ c.education or 'Not provided' }}</td>
+        <td>{{ c.experience_years }} yrs</td>
+        <td>{{ c.location or 'Not provided' }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" class="empty-state">No candidates added yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

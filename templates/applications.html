@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="heading">
+  <h1>Applications</h1>
+</div>
+
+<div class="panel">
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Candidate</th>
+        <th>Job</th>
+        <th>Status</th>
+        <th>Date</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for app in applications %}
+      <tr>
+        <td>{{ app.application_id }}</td>
+        <td>{{ app.candidate_name }}</td>
+        <td>{{ app.job_title }}</td>
+        <td><span class="status-badge">{{ app.status }}</span></td>
+        <td>{{ app.application_date.strftime('%Y-%m-%d %H:%M') if app.application_date else 'N/A' }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="5" class="empty-state">No applications submitted yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

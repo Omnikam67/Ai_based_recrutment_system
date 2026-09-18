@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="form-panel">
+  <h1>Apply Candidate to {{ job.job_title }}</h1>
+  <form method="post" class="form">
+    <label>
+      <span>Select candidate</span>
+      <select name="candidate_id" required>
+        <option value="">-- Choose a candidate --</option>
+        {% for candidate in candidates %}
+        <option value="{{ candidate.candidate_id }}">{{ candidate.name }} ({{ candidate.email }})</option>
+        {% endfor %}
+      </select>
+    </label>
+    <button class="btn" type="submit">Submit Application</button>
+  </form>
+</section>
+{% endblock %}
