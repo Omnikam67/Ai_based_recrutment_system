@@ -8,6 +8,8 @@ import struct
 import sys
 from typing import TYPE_CHECKING
 
+from pandas.util._decorators import set_module
+
 if TYPE_CHECKING:
     from pandas._typing import JSONSerializable
 
@@ -66,7 +68,6 @@ def _get_dependency_info() -> dict[str, JSONSerializable]:
         "pandas",
         # required
         "numpy",
-        "pytz",
         "dateutil",
         # install / build,
         "pip",
@@ -91,6 +92,7 @@ def _get_dependency_info() -> dict[str, JSONSerializable]:
     return result
 
 
+@set_module("pandas")
 def show_versions(as_json: str | bool = False) -> None:
     """
     Provide useful information, important for bug reports.
@@ -105,6 +107,11 @@ def show_versions(as_json: str | bool = False) -> None:
         * If str, it will be considered as a path to a file.
           Info will be written to that file in JSON format.
         * If True, outputs info in JSON format to the console.
+
+    See Also
+    --------
+    get_option : Retrieve the value of the specified option.
+    set_option : Set the value of the specified option or options.
 
     Examples
     --------

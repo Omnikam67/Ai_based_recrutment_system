@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="auth-shell">
+  <div class="login-panel">
+    <h1>Create Account</h1>
+    <p>Register as HR or candidate.</p>
+
+    <form class="form" method="post">
+      <label>
+        Full Name
+        <input type="text" name="name" placeholder="Enter full name" required>
+      </label>
+
+      <label>
+        Role
+        <select name="role" required>
+          <option value="HR">HR</option>
+          <option value="User">Candidate</option>
+        </select>
+      </label>
+
+      <label>
+        Email
+        <input type="email" name="email" placeholder="Enter email" required>
+      </label>
+
+      <label>
+        Password
+        <input type="password" name="password" placeholder="Enter password" required>
+      </label>
+
+      <button class="btn" type="submit">Register</button>
+    </form>
+
+    <p style="margin-top: 16px; font-size: 0.9rem; color: #475569;">
+      Already have an account? <a href="/login">Login here</a>
+    </p>
+  </div>
+</div>
+{% endblock %}

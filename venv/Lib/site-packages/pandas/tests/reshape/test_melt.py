@@ -133,25 +133,21 @@ class TestMelt:
                 ["A"],
                 ["B"],
                 0,
-                DataFrame(
-                    {
-                        "A": {0: 1.067683, 1: -1.321405, 2: -0.807333},
-                        "CAP": {0: "B", 1: "B", 2: "B"},
-                        "value": {0: -1.110463, 1: 0.368915, 2: 0.08298},
-                    }
-                ),
+                {
+                    "A": {0: 1.067683, 1: -1.321405, 2: -0.807333},
+                    "CAP": {0: "B", 1: "B", 2: "B"},
+                    "value": {0: -1.110463, 1: 0.368915, 2: 0.08298},
+                },
             ),
             (
                 ["a"],
                 ["b"],
                 1,
-                DataFrame(
-                    {
-                        "a": {0: 1.067683, 1: -1.321405, 2: -0.807333},
-                        "low": {0: "b", 1: "b", 2: "b"},
-                        "value": {0: -1.110463, 1: 0.368915, 2: 0.08298},
-                    }
-                ),
+                {
+                    "a": {0: 1.067683, 1: -1.321405, 2: -0.807333},
+                    "low": {0: "b", 1: "b", 2: "b"},
+                    "value": {0: -1.110463, 1: 0.368915, 2: 0.08298},
+                },
             ),
         ],
     )
@@ -159,6 +155,7 @@ class TestMelt:
         self, id_vars, value_vars, col_level, expected, df1
     ):
         result = df1.melt(id_vars, value_vars, col_level=col_level)
+        expected = DataFrame(expected)
         tm.assert_frame_equal(result, expected)
 
     @pytest.mark.parametrize(
@@ -287,13 +284,14 @@ class TestMelt:
     @pytest.mark.parametrize(
         "col",
         [
-            pd.Series(date_range("2010", periods=5, tz="US/Pacific")),
-            pd.Series(["a", "b", "c", "a", "d"], dtype="category"),
-            pd.Series([0, 1, 0, 0, 0]),
+            date_range("2010", periods=5, tz="US/Pacific"),
+            pd.Categorical(["a", "b", "c", "a", "d"]),
+            [0, 1, 0, 0, 0],
         ],
     )
     def test_pandas_dtypes(self, col):
         # GH 15785
+        col = pd.Series(col)
         df = DataFrame(
             {"klass": range(5), "col": col, "attr1": [1, 0, 0, 0, 0], "attr2": col}
         )
@@ -349,13 +347,12 @@ class TestMelt:
             df.melt(["a", "b", "not_here", "or_there"], ["c", "d"])
 
         # Multiindex melt fails if column is missing from multilevel melt
-        multi = df.copy()
-        multi.columns = [list("ABCD"), list("abcd")]
+        df.columns = [list("ABCD"), list("abcd")]
         with pytest.raises(KeyError, match=msg):
-            multi.melt([("E", "a")], [("B", "b")])
+            df.melt([("E", "a")], [("B", "b")])
         # Multiindex fails if column is missing from single level melt
         with pytest.raises(KeyError, match=msg):
-            multi.melt(["A"], ["F"], col_level=0)
+            df.melt(["A"], ["F"], col_level=0)
 
     def test_melt_mixed_int_str_id_vars(self):
         # GH 29718
@@ -537,6 +534,34 @@ class TestMelt:
         )
         with pytest.raises(ValueError, match=r".* must be a scalar."):
             df.melt(id_vars=["a"], var_name=[1, 2])
+
+    def test_melt_multiindex_columns_var_name(self):
+        # GH 58033
+        df = DataFrame({("A", "a"): [1], ("A", "b"): [2]})
+
+        expected = DataFrame(
+            [("A", "a", 1), ("A", "b", 2)], columns=["first", "second", "value"]
+        )
+
+        tm.assert_frame_equal(df.melt(var_name=["first", "second"]), expected)
+        tm.assert_frame_equal(df.melt(var_name=["first"]), expected[["first", "value"]])
+
+    def test_melt_multiindex_columns_var_name_too_many(self):
+        # GH 58033
+        df = DataFrame({("A", "a"): [1], ("A", "b"): [2]})
+
+        with pytest.raises(
+            ValueError, match="but the dataframe columns only have 2 levels"
+        ):
+            df.melt(var_name=["first", "second", "third"])
+
+    def test_melt_duplicate_column_header_raises(self):
+        # GH61475
+        df = DataFrame([[1, 2, 3], [3, 4, 5]], columns=["A", "A", "B"])
+        msg = "id_vars cannot contain duplicate columns."
+
+        with pytest.raises(ValueError, match=msg):
+            df.melt(id_vars=["A"], value_vars=["B"])
 
 
 class TestLreshape:
@@ -908,7 +933,7 @@ class TestWideToLong:
         tm.assert_frame_equal(result.sort_index(axis=1), expected.sort_index(axis=1))
 
     def test_invalid_separator(self):
-        # if an invalid separator is supplied a empty data frame is returned
+        # if an invalid separator is supplied an empty data frame is returned
         sep = "nope!"
         df = DataFrame(
             {
@@ -1199,10 +1224,7 @@ class TestWideToLong:
         ):
             df.melt(id_vars="value", value_name="value")
 
-    def test_missing_stubname(self, request, any_string_dtype, using_infer_string):
-        if using_infer_string and any_string_dtype == "object":
-            # triggers object dtype inference warning of dtype=object
-            request.applymarker(pytest.mark.xfail(reason="TODO(infer_string)"))
+    def test_missing_stubname(self, any_string_dtype):
         # GH46044
         df = DataFrame({"id": ["1", "2"], "a-1": [100, 200], "a-2": [300, 400]})
         df = df.astype({"id": any_string_dtype})

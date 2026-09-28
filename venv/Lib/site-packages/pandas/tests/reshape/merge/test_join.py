@@ -1,9 +1,8 @@
+from datetime import datetime
 import re
 
 import numpy as np
 import pytest
-
-from pandas._config import using_string_dtype
 
 import pandas.util._test_decorators as td
 
@@ -156,13 +155,12 @@ class TestJoin:
             target.join(source, on="E")
 
         # overlap
-        source_copy = source.copy()
         msg = (
             "You are trying to merge on float64 and object|str columns for key "
             "'A'. If you wish to proceed you should use pd.concat"
         )
         with pytest.raises(ValueError, match=msg):
-            target.join(source_copy, on="A")
+            target.join(source, on="A")
 
     def test_join_on_fails_with_different_right_index(self):
         df = DataFrame(
@@ -343,8 +341,6 @@ class TestJoin:
         expected = _join_by_hand(df1, df2)
         tm.assert_frame_equal(joined, expected)
 
-    # triggers warning about empty entries
-    @pytest.mark.xfail(using_string_dtype(), reason="TODO(infer_string)")
     def test_join_empty_bug(self):
         # generated an exception in 0.4.3
         x = DataFrame()
@@ -675,6 +671,63 @@ class TestJoin:
         msg = "Joining multiple DataFrames only supported for joining on index"
         with pytest.raises(ValueError, match=msg):
             df_list[0].join(df_list[1:], on="a")
+
+    @pytest.mark.parametrize("how", ["left", "right", "inner", "outer"])
+    def test_join_many_sort_unique(self, how, sort):
+        # https://github.com/pandas-dev/pandas/pull/62954
+        df = DataFrame({"a": [1, 2, 3]}, index=[1, 0, 2])
+        df2 = DataFrame({"b": [4, 5, 6]}, index=[2, 0, 1])
+        if how == "right":
+            expected = DataFrame({"a": [3, 2, 1], "b": [4, 5, 6]}, index=[2, 0, 1])
+        else:
+            expected = DataFrame({"a": [1, 2, 3], "b": [6, 5, 4]}, index=[1, 0, 2])
+        if how == "outer" or sort:
+            # outer always sorts.
+            expected = expected.sort_index()
+        result = df.join([df2], how=how, sort=sort)
+        tm.assert_frame_equal(result, expected)
+
+    @pytest.mark.parametrize("how", ["left", "right", "inner", "outer"])
+    def test_join_many_sort_nonunique(self, how, sort):
+        # https://github.com/pandas-dev/pandas/pull/62954
+        df = DataFrame({"a": [1, 2, 3]}, index=[3, 0, 0])
+        df2 = DataFrame({"b": [4, 5, 6]}, index=[2, 0, 1])
+        if how == "inner":
+            expected = DataFrame({"a": [2, 3], "b": [5, 5]}, index=[0, 0])
+        elif how == "left":
+            expected = DataFrame(
+                {"a": [1, 2, 3], "b": [np.nan, 5.0, 5.0]}, index=[3, 0, 0]
+            )
+        elif how == "right":
+            expected = DataFrame(
+                {"a": [np.nan, 2.0, 3.0, np.nan], "b": [4, 5, 5, 6]}, index=[2, 0, 0, 1]
+            )
+        else:
+            expected = DataFrame(
+                {
+                    "a": [2.0, 3.0, np.nan, np.nan, 1.0],
+                    "b": [5.0, 5.0, 6.0, 4.0, np.nan],
+                },
+                index=[0, 0, 1, 2, 3],
+            )
+        if sort:
+            expected = expected.sort_index()
+        result = df.join([df2], how=how, sort=sort)
+        tm.assert_frame_equal(result, expected)
+
+    @pytest.mark.parametrize("how", ["inner", "outer", "left", "right"])
+    def test_join_many_datetime_unsorted(self, how):
+        # https://github.com/pandas-dev/pandas/pull/62843
+        index = Index([datetime(2024, 1, 2), datetime(2024, 1, 1)])
+        df = DataFrame({"a": [1, 2]}, index=index)
+        df2 = DataFrame({"b": [1, 2]}, index=index)
+        result = df.join([df2], how=how)
+        if how == "outer":
+            # Outer always sorts the index.
+            expected = DataFrame({"a": [2, 1], "b": [2, 1]}, index=[index[1], index[0]])
+        else:
+            expected = DataFrame({"a": [1, 2], "b": [1, 2]}, index=index)
+        tm.assert_frame_equal(result, expected)
 
     def test_join_many_mixed(self):
         df = DataFrame(
@@ -1105,3 +1158,29 @@ def test_join_multiindex_categorical_output_index_dtype(how, values):
 
     result = df1.join(df2, how=how)
     tm.assert_frame_equal(result, expected)
+
+
+def test_join_multiindex_with_none_as_label():
+    # GH 58721
+    df1 = DataFrame(
+        {"A": [1]},
+        index=MultiIndex.from_tuples([(3, 3)], names=["X", None]),
+    )
+    df2 = DataFrame(
+        {"B": [2]},
+        index=MultiIndex.from_tuples([(3, 3)], names=[None, "X"]),
+    )
+
+    result12 = df1.join(df2)
+    expected12 = DataFrame(
+        {"A": [1], "B": [2]},
+        index=MultiIndex.from_tuples([(3, 3)], names=["X", None]),
+    )
+    tm.assert_frame_equal(result12, expected12)
+
+    result21 = df2.join(df1)
+    expected21 = DataFrame(
+        {"B": [2], "A": [1]},
+        index=MultiIndex.from_tuples([(3, 3)], names=[None, "X"]),
+    )
+    tm.assert_frame_equal(result21, expected21)

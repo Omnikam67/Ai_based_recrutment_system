@@ -11,6 +11,7 @@ internally that specifically check for dicts, and does non-scalar things
 in that case. We *want* the dictionaries to be treated as scalars, so we
 hack around pandas by using UserDicts.
 """
+
 from __future__ import annotations
 
 from collections import (
@@ -25,11 +26,8 @@ from typing import (
     TYPE_CHECKING,
     Any,
 )
-import warnings
 
 import numpy as np
-
-from pandas.util._exceptions import find_stack_level
 
 from pandas.core.dtypes.cast import construct_1d_object_array_from_listlike
 from pandas.core.dtypes.common import (
@@ -43,7 +41,10 @@ from pandas.api.extensions import (
     ExtensionArray,
     ExtensionDtype,
 )
-from pandas.core.indexers import unpack_tuple_and_ellipses
+from pandas.core.indexers import (
+    getitem_returns_view,
+    unpack_tuple_and_ellipses,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -56,8 +57,7 @@ class JSONDtype(ExtensionDtype):
     name = "json"
     na_value: Mapping[str, Any] = UserDict()
 
-    @classmethod
-    def construct_array_type(cls) -> type_t[JSONArray]:
+    def construct_array_type(self) -> type_t[JSONArray]:
         """
         Return the array type associated with this dtype.
 
@@ -93,6 +93,16 @@ class JSONArray(ExtensionArray):
     def _from_factorized(cls, values, original):
         return cls([UserDict(x) for x in values if x != ()])
 
+    def _cast_pointwise_result(self, values):
+        try:
+            return type(self)._from_sequence(values, dtype=self.dtype)
+        except (ValueError, TypeError):
+            # TODO replace with public function
+            from pandas._libs import lib
+
+            values = np.asarray(values, dtype=object)
+            return lib.maybe_convert_objects(values, convert_non_numeric=True)
+
     def __getitem__(self, item):
         if isinstance(item, tuple):
             item = unpack_tuple_and_ellipses(item)
@@ -101,10 +111,15 @@ class JSONArray(ExtensionArray):
             return self.data[item]
         elif isinstance(item, slice) and item == slice(None):
             # Make sure we get a view
-            return type(self)(self.data)
+            result = type(self)(self.data)
+            result._readonly = self._readonly
+            return result
         elif isinstance(item, slice):
             # slice
-            return type(self)(self.data[item])
+            result = type(self)(self.data[item])
+            if getitem_returns_view(self, item):
+                result._readonly = self._readonly
+            return result
         elif not is_list_like(item):
             # e.g. "foo" or 2.5
             # exception message copied from numpy
@@ -116,12 +131,15 @@ class JSONArray(ExtensionArray):
             item = pd.api.indexers.check_array_indexer(self, item)
             if is_bool_dtype(item.dtype):
                 return type(self)._from_sequence(
-                    [x for x, m in zip(self, item) if m], dtype=self.dtype
+                    [x for x, m in zip(self, item, strict=True) if m], dtype=self.dtype
                 )
             # integer
             return type(self)([self.data[i] for i in item])
 
     def __setitem__(self, key, value) -> None:
+        if self._readonly:
+            raise ValueError("Cannot modify read-only array")
+
         if isinstance(key, numbers.Integral):
             self.data[key] = value
         else:
@@ -131,12 +149,12 @@ class JSONArray(ExtensionArray):
 
             if isinstance(key, np.ndarray) and key.dtype == "bool":
                 # masking
-                for i, (k, v) in enumerate(zip(key, value)):
+                for i, (k, v) in enumerate(zip(key, value, strict=False)):
                     if k:
                         assert isinstance(v, self.dtype.type)
                         self.data[i] = v
             else:
-                for k, v in zip(key, value):
+                for k, v in zip(key, value, strict=False):
                     assert isinstance(v, self.dtype.type)
                     self.data[k] = v
 
@@ -151,17 +169,9 @@ class JSONArray(ExtensionArray):
 
     def __array__(self, dtype=None, copy=None):
         if copy is False:
-            warnings.warn(
-                "Starting with NumPy 2.0, the behavior of the 'copy' keyword has "
-                "changed and passing 'copy=False' raises an error when returning "
-                "a zero-copy NumPy array is not possible. pandas will follow "
-                "this behavior starting with pandas 3.0.\nThis conversion to "
-                "NumPy requires a copy, but 'copy=False' was passed. Consider "
-                "using 'np.asarray(..)' instead.",
-                FutureWarning,
-                stacklevel=find_stack_level(),
+            raise ValueError(
+                "Unable to avoid copy while creating an array as requested."
             )
-
         if dtype is None:
             dtype = object
         if dtype == object:
@@ -185,8 +195,7 @@ class JSONArray(ExtensionArray):
         # an ndarary.
         indexer = np.asarray(indexer)
         msg = (
-            "Index is out of bounds or cannot do a "
-            "non-empty take from an empty array."
+            "Index is out of bounds or cannot do a non-empty take from an empty array."
         )
 
         if allow_fill:
@@ -259,7 +268,7 @@ class JSONArray(ExtensionArray):
         return super()._pad_or_backfill(method=method, limit=limit, copy=copy)
 
 
-def make_data():
+def make_data(n: int):
     # TODO: Use a regular dict. See _NDFrameIndexer._setitem_with_indexer
     rng = np.random.default_rng(2)
     return [
@@ -269,5 +278,5 @@ def make_data():
                 for _ in range(rng.integers(0, 10))
             ]
         )
-        for _ in range(100)
+        for _ in range(n)
     ]

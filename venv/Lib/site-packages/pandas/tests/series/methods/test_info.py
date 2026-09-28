@@ -56,7 +56,7 @@ def test_info_series(
 
     expected = textwrap.dedent(
         """\
-        <class 'pandas.core.series.Series'>
+        <class 'pandas.Series'>
         MultiIndex: 10 entries, ('foo', 'one') to ('qux', 'three')
         """
     )
@@ -87,7 +87,7 @@ def test_info_memory():
     memory_bytes = float(s.memory_usage())
     expected = textwrap.dedent(
         f"""\
-    <class 'pandas.core.series.Series'>
+    <class 'pandas.Series'>
     RangeIndex: 2 entries, 0 to 1
     Series name: None
     Non-Null Count  Dtype
@@ -163,8 +163,8 @@ def test_info_memory_usage_deep_pypy():
     ],
 )
 def test_info_memory_usage_qualified(index, plus):
-    series = Series(1, index=index)
     buf = StringIO()
+    series = Series(1, index=index)
     series.info(buf=buf)
     if plus:
         assert "+" in buf.getvalue()
@@ -190,3 +190,23 @@ def test_info_memory_usage_bug_on_multiindex():
     # high upper bound
     diff = unstacked.memory_usage(deep=True).sum() - s.memory_usage(deep=True)
     assert diff < 2000
+
+
+def test_info_show_counts_false():
+    s = Series([1])
+    buf = StringIO()
+    s.info(buf=buf, show_counts=False)
+    result = buf.getvalue()
+    memory_bytes = float(s.memory_usage())
+    expected = textwrap.dedent(
+        f"""\
+    <class 'pandas.Series'>
+    RangeIndex: 1 entries, 0 to 0
+    Series name: None
+    Dtype
+    -----
+    int64
+    dtypes: int64(1)
+    memory usage: {memory_bytes} bytes"""
+    )
+    assert result.strip() == expected.strip()

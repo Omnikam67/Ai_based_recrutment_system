@@ -31,19 +31,19 @@ Overall Score =
 
 ## Setup
 1. Install MySQL 8+ and Python 3.11+.
-2. Create database:
-   mysql -u root -p < schema.sql
-3. Insert sample data:
-   mysql -u root -p talent_acquisition < seed.sql
-4. Create virtual environment:
+2. Create a virtual environment:
    python -m venv venv
-5. Activate it:
-   Windows: venv\Scripts\activate
-6. Install:
+3. Activate it:
+   Windows: .\venv\Scripts\Activate.ps1
+4. Install dependencies:
    pip install -r requirements.txt
-7. Set DB_PASSWORD in your environment, or edit db.py.
-8. Run:
-   python app.py
+5. Make sure MySQL is running and the database credentials in .env are correct.
+6. Create the database:
+   mysql -u root -p < schema.sql
+7. Insert sample data:
+   mysql -u root -p talent_acquisition < seed.sql
+8. Run the app using the virtual environment:
+   .\venv\Scripts\python.exe app.py
 9. Open http://127.0.0.1:5000
 
 ## Demo

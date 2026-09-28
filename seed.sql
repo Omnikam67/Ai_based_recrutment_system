@@ -1,7 +1,8 @@
 USE talent_acquisition;
 
 INSERT IGNORE INTO users(name,email,password,role) VALUES
-('HR Admin','hr@example.com','admin123','HR');
+('HR Admin','hr@example.com','admin123','HR'),
+('Job Seeker','user@example.com','user123','User');
 
 INSERT IGNORE INTO skills(skill_name,category) VALUES
 ('Python','Programming'),('SQL','Database'),('MySQL','Database'),

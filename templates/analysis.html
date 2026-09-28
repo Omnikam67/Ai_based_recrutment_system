@@ -20,23 +20,33 @@
 <div class="panel split-layout">
   <div>
     <h2>Matched Skills</h2>
-    <ul class="check-list">
-      {% for x in result.matched %}
-      <li>{{ x.skill_name }} — {{ x.required_level }}</li>
-      {% else %}
-      <li>No strong matches identified.</li>
-      {% endfor %}
-    </ul>
+    <table>
+      <thead>
+        <tr><th>Skill</th><th>Required Level</th></tr>
+      </thead>
+      <tbody>
+        {% for x in result.matched %}
+        <tr><td>{{ x.skill_name }}</td><td>{{ x.required_level }}</td></tr>
+        {% else %}
+        <tr><td colspan="2" class="empty-state">No strong matches identified.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
   <div>
     <h2>Skill Gaps</h2>
-    <ul class="warning-list">
-      {% for x in result.missing %}
-      <li>{{ x.skill_name }} — Required: {{ x.required_level }}</li>
-      {% else %}
-      <li>No major missing skills.</li>
-      {% endfor %}
-    </ul>
+    <table>
+      <thead>
+        <tr><th>Missing Skill</th><th>Required</th></tr>
+      </thead>
+      <tbody>
+        {% for x in result.missing %}
+        <tr><td>{{ x.skill_name }}</td><td>{{ x.required_level }}</td></tr>
+        {% else %}
+        <tr><td colspan="2" class="empty-state">No major missing skills.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
 </div>
 

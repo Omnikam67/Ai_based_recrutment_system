@@ -1,4 +1,4 @@
-""" test fancy indexing & misc """
+"""test fancy indexing & misc"""
 
 import array
 from datetime import datetime
@@ -75,9 +75,7 @@ class TestFancy:
         "ignore:Series.__getitem__ treating keys as positions is deprecated:"
         "FutureWarning"
     )
-    def test_getitem_ndarray_3d(
-        self, index, frame_or_series, indexer_sli, using_array_manager
-    ):
+    def test_getitem_ndarray_3d(self, index, frame_or_series, indexer_sli):
         # GH 25567
         obj = gen_obj(frame_or_series, index)
         idxr = indexer_sli(obj)
@@ -86,12 +84,8 @@ class TestFancy:
         msgs = []
         if frame_or_series is Series and indexer_sli in [tm.setitem, tm.iloc]:
             msgs.append(r"Wrong number of dimensions. values.ndim > ndim \[3 > 1\]")
-            if using_array_manager:
-                msgs.append("Passed array should be 1-dimensional")
         if frame_or_series is Series or indexer_sli is tm.iloc:
             msgs.append(r"Buffer has wrong number of dimensions \(expected 1, got 3\)")
-            if using_array_manager:
-                msgs.append("indexer should be 1-dimensional")
         if indexer_sli is tm.loc or (
             frame_or_series is Series and indexer_sli is tm.setitem
         ):
@@ -184,14 +178,8 @@ class TestFancy:
         df["c"] = np.nan
         assert df["c"].dtype == np.float64
 
-        with tm.assert_produces_warning(
-            FutureWarning, match="item of incompatible dtype"
-        ):
+        with pytest.raises(TypeError, match="Invalid value"):
             df.loc[0, "c"] = "foo"
-        expected = DataFrame(
-            {"a": [1, 3], "b": [np.nan, 2], "c": Series(["foo", np.nan], dtype=object)}
-        )
-        tm.assert_frame_equal(df, expected)
 
     @pytest.mark.parametrize("val", [3.14, "wxyz"])
     def test_setitem_dtype_upcast2(self, val):
@@ -203,19 +191,8 @@ class TestFancy:
         )
 
         left = df.copy()
-        with tm.assert_produces_warning(
-            FutureWarning, match="item of incompatible dtype"
-        ):
+        with pytest.raises(TypeError, match="Invalid value"):
             left.loc["a", "bar"] = val
-        right = DataFrame(
-            [[0, val, 2], [3, 4, 5]],
-            index=list("ab"),
-            columns=["foo", "bar", "baz"],
-        )
-
-        tm.assert_frame_equal(left, right)
-        assert is_integer_dtype(left["foo"])
-        assert is_integer_dtype(left["baz"])
 
     def test_setitem_dtype_upcast3(self):
         left = DataFrame(
@@ -223,20 +200,8 @@ class TestFancy:
             index=list("ab"),
             columns=["foo", "bar", "baz"],
         )
-        with tm.assert_produces_warning(
-            FutureWarning, match="item of incompatible dtype"
-        ):
+        with pytest.raises(TypeError, match="Invalid value"):
             left.loc["a", "bar"] = "wxyz"
-
-        right = DataFrame(
-            [[0, "wxyz", 0.2], [0.3, 0.4, 0.5]],
-            index=list("ab"),
-            columns=["foo", "bar", "baz"],
-        )
-
-        tm.assert_frame_equal(left, right)
-        assert is_float_dtype(left["foo"])
-        assert is_float_dtype(left["baz"])
 
     def test_dups_fancy_indexing(self):
         # GH 3455
@@ -374,7 +339,7 @@ class TestFancy:
     def test_multitype_list_index_access(self):
         # GH 10610
         df = DataFrame(
-            np.random.default_rng(2).random((10, 5)), columns=["a"] + [20, 21, 22, 23]
+            np.random.default_rng(2).random((10, 5)), columns=["a", 20, 21, 22, 23]
         )
 
         with pytest.raises(KeyError, match=re.escape("'[26, -8] not in index'")):
@@ -634,7 +599,7 @@ class TestFancy:
             indexer(s2)[0.0] = 0
             exp = s.index
             if 0 not in s:
-                exp = Index(s.index.tolist() + [0])
+                exp = Index([*s.index.tolist(), 0])
             tm.assert_index_equal(s2.index, exp)
 
             s2 = s.copy()
@@ -683,7 +648,7 @@ class TestMisc:
         df.loc[df.index] = df.loc[df.index]
         tm.assert_frame_equal(df, df2)
 
-    def test_rhs_alignment(self, using_infer_string):
+    def test_rhs_alignment(self):
         # GH8258, tests that both rows & columns are aligned to what is
         # assigned to. covers both uniform data-type & multi-type cases
         def run_tests(df, rhs, right_loc, right_iloc):
@@ -707,7 +672,7 @@ class TestMisc:
         cols = ["jim", "joe", "jolie", "joline"]
         df = DataFrame(xs, columns=cols, index=list("abcde"), dtype="int64")
 
-        # right hand side; permute the indices and multiplpy by -2
+        # right hand side; permute the indices and multiply by -2
         rhs = -2 * df.iloc[3:0:-1, 2:0:-1]
 
         # expected `right` result; just multiply by -2
@@ -727,15 +692,8 @@ class TestMisc:
             frame["jolie"] = frame["jolie"].map(lambda x: f"@{x}")
         right_iloc["joe"] = [1.0, "@-28", "@-20", "@-12", 17.0]
         right_iloc["jolie"] = ["@2", -26.0, -18.0, -10.0, "@18"]
-        if using_infer_string:
-            with pytest.raises(TypeError, match="Invalid value"):
-                with tm.assert_produces_warning(
-                    FutureWarning, match="incompatible dtype"
-                ):
-                    run_tests(df, rhs, right_loc, right_iloc)
-        else:
-            with tm.assert_produces_warning(FutureWarning, match="incompatible dtype"):
-                run_tests(df, rhs, right_loc, right_iloc)
+        with pytest.raises(TypeError, match="Invalid value"):
+            run_tests(df, rhs, right_loc, right_iloc)
 
     @pytest.mark.parametrize(
         "idx", [_mklbl("A", 20), np.arange(20) + 100, np.linspace(100, 150, 20)]
@@ -786,10 +744,10 @@ class TestMisc:
         # GH 11652
         s = Series(index=range(size), dtype=np.float64)
         s.loc[range(1)] = 42
-        tm.assert_series_equal(s.loc[range(1)], Series(42.0, index=[0]))
+        tm.assert_series_equal(s.loc[range(1)], Series(42.0, index=range(1)))
 
         s.loc[range(2)] = 43
-        tm.assert_series_equal(s.loc[range(2)], Series(43.0, index=[0, 1]))
+        tm.assert_series_equal(s.loc[range(2)], Series(43.0, index=range(2)))
 
     def test_partial_boolean_frame_indexing(self):
         # GH 17170
@@ -802,6 +760,27 @@ class TestMisc:
             np.array([[0.0, 1.0, np.nan], [3.0, 4.0, np.nan], [np.nan] * 3]),
             index=list("abc"),
             columns=list("ABC"),
+        )
+        tm.assert_frame_equal(result, expected)
+
+    def test_period_column_slicing(self):
+        # GH#60273 The transpose operation creates a single 5x1 block of PeriodDtype
+        # Make sure it is reindexed correctly
+        df = DataFrame(
+            pd.period_range("2021-01-01", periods=5, freq="D"),
+            columns=["A"],
+        ).T
+        result = df[[0, 1, 2]]
+        expected = DataFrame(
+            [
+                [
+                    pd.Period("2021-01-01", freq="D"),
+                    pd.Period("2021-01-02", freq="D"),
+                    pd.Period("2021-01-03", freq="D"),
+                ]
+            ],
+            index=["A"],
+            columns=[0, 1, 2],
         )
         tm.assert_frame_equal(result, expected)
 

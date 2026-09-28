@@ -27,7 +27,7 @@ from pandas import (
 import pandas._testing as tm
 
 
-@pytest.fixture()
+@pytest.fixture
 def multiindex_df():
     levels = [["A", ""], ["B", "b"]]
     return DataFrame([[0, 2], [1, 3]], columns=MultiIndex.from_tuples(levels))
@@ -57,7 +57,9 @@ class TestResetIndex:
         tm.assert_index_equal(df.index, idx)
 
     def test_set_index_reset_index_dt64tz(self):
-        idx = Index(date_range("20130101", periods=3, tz="US/Eastern"), name="foo")
+        idx = Index(
+            date_range("20130101", periods=3, tz="US/Eastern", unit="ns"), name="foo"
+        )
 
         # set/reset
         df = DataFrame({"A": [0, 1, 2]}, index=idx)
@@ -106,7 +108,7 @@ class TestResetIndex:
         tm.assert_frame_equal(result2, original)
 
     def test_reset_index(self, float_frame):
-        stacked = float_frame.stack(future_stack=True)[::2]
+        stacked = float_frame.stack()[::2]
         stacked = DataFrame({"foo": stacked, "bar": stacked})
 
         names = ["first", "second"]
@@ -232,9 +234,7 @@ class TestResetIndex:
 
     def test_reset_index_right_dtype(self):
         time = np.arange(0.0, 10, np.sqrt(2) / 2)
-        s1 = Series(
-            (9.81 * time**2) / 2, index=Index(time, name="time"), name="speed"
-        )
+        s1 = Series((9.81 * time**2) / 2, index=Index(time, name="time"), name="speed")
         df = DataFrame(s1)
 
         reset = s1.reset_index()
@@ -352,7 +352,7 @@ class TestResetIndex:
         # GH#5818
         df = DataFrame(
             [[1, 2], [3, 4]],
-            columns=date_range("1/1/2013", "1/2/2013"),
+            columns=date_range("1/1/2013", "1/2/2013", unit="ns"),
             index=["A", "B"],
         )
         df.index.name = name
@@ -602,8 +602,8 @@ class TestResetIndex:
                 {"a": [pd.NaT, Timestamp("2020-01-01")], "b": [1, 2], "x": [11, 12]},
             ),
             (
-                [(pd.NaT, 1), (pd.Timedelta(123, "d"), 2)],
-                {"a": [pd.NaT, pd.Timedelta(123, "d")], "b": [1, 2], "x": [11, 12]},
+                [(pd.NaT, 1), (pd.Timedelta(123, "D"), 2)],
+                {"a": [pd.NaT, pd.Timedelta(123, "D")], "b": [1, 2], "x": [11, 12]},
             ),
         ],
     )
@@ -701,7 +701,7 @@ def test_reset_index_empty_frame_with_datetime64_multiindex_from_groupby(
 def test_reset_index_multiindex_nat():
     # GH 11479
     idx = range(3)
-    tstamp = date_range("2015-07-01", freq="D", periods=3)
+    tstamp = date_range("2015-07-01", freq="D", periods=3, unit="ns")
     df = DataFrame({"id": idx, "tstamp": tstamp, "a": list("abc")})
     df.loc[2, "tstamp"] = pd.NaT
     result = df.set_index(["id", "tstamp"]).reset_index("id")
@@ -741,7 +741,7 @@ def test_reset_index_rename(float_frame):
 
 def test_reset_index_rename_multiindex(float_frame):
     # GH 6878
-    stacked_df = float_frame.stack(future_stack=True)[::2]
+    stacked_df = float_frame.stack()[::2]
     stacked_df = DataFrame({"foo": stacked_df, "bar": stacked_df})
 
     names = ["first", "second"]
@@ -755,7 +755,7 @@ def test_reset_index_rename_multiindex(float_frame):
 
 def test_errorreset_index_rename(float_frame):
     # GH 6878
-    stacked_df = float_frame.stack(future_stack=True)[::2]
+    stacked_df = float_frame.stack()[::2]
     stacked_df = DataFrame({"first": stacked_df, "second": stacked_df})
 
     with pytest.raises(

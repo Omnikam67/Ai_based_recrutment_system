@@ -1,6 +1,7 @@
 """
 Tests for the pandas custom headers in http(s) requests
 """
+
 from functools import partial
 import gzip
 from io import BytesIO
@@ -102,11 +103,9 @@ def stata_responder(df):
         pytest.param(
             parquetfastparquet_responder,
             partial(pd.read_parquet, engine="fastparquet"),
-            # TODO(ArrayManager) fastparquet
             marks=[
                 td.skip_if_no("fastparquet"),
                 td.skip_if_no("fsspec"),
-                td.skip_array_manager_not_yet_implemented,
                 pytest.mark.xfail(using_string_dtype(), reason="TODO(infer_string"),
             ],
         ),

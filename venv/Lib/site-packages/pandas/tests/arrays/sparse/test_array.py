@@ -53,10 +53,11 @@ class TestSparseArray:
         arr.fill_value = 2
         assert arr.fill_value == 2
 
-        msg = "Allowing arbitrary scalar fill_value in SparseDtype is deprecated"
-        with tm.assert_produces_warning(FutureWarning, match=msg):
+        msg = "fill_value must be a valid value for the SparseDtype.subtype"
+        with pytest.raises(ValueError, match=msg):
+            # GH#53043
             arr.fill_value = 3.1
-        assert arr.fill_value == 3.1
+        assert arr.fill_value == 2
 
         arr.fill_value = np.nan
         assert np.isnan(arr.fill_value)
@@ -65,8 +66,9 @@ class TestSparseArray:
         arr.fill_value = True
         assert arr.fill_value is True
 
-        with tm.assert_produces_warning(FutureWarning, match=msg):
+        with pytest.raises(ValueError, match=msg):
             arr.fill_value = 0
+        assert arr.fill_value is True
 
         arr.fill_value = np.nan
         assert np.isnan(arr.fill_value)
@@ -118,9 +120,9 @@ class TestSparseArray:
         tm.assert_numpy_array_equal(res, vals)
 
     @pytest.mark.parametrize("fix", ["arr", "zarr"])
-    def test_pickle(self, fix, request):
+    def test_pickle(self, fix, request, temp_file):
         obj = request.getfixturevalue(fix)
-        unpickled = tm.round_trip_pickle(obj)
+        unpickled = tm.round_trip_pickle(obj, temp_file)
         tm.assert_sp_array_equal(unpickled, obj)
 
     def test_generator_warnings(self):
@@ -361,6 +363,28 @@ def test_setting_fill_value_fillna_still_works():
     tm.assert_numpy_array_equal(result, expected)
 
 
+def test_cumsum_integer_no_recursion():
+    # GH 62669: RecursionError in integer SparseArray.cumsum
+    arr = SparseArray([1, 2, 3])
+    result = arr.cumsum()
+    expected = SparseArray([1, 3, 6], fill_value=np.nan)
+    tm.assert_sp_array_equal(result, expected)
+
+    # Also test with some zeros interleaved
+    arr2 = SparseArray([0, 1, 0, 2])
+    result2 = arr2.cumsum()
+    expected2 = SparseArray([0, 1, 1, 3], fill_value=np.nan)
+    tm.assert_sp_array_equal(result2, expected2)
+
+
+def test_cumsum_float_fill_value_zero():
+    # GH 62669
+    arr = pd.arrays.SparseArray([1.0, 0.0, np.nan, 3.0], fill_value=0.0)
+    result = arr.cumsum()
+    expected = SparseArray([1.0, 1.0, None, 4.0], fill_value=np.nan)
+    tm.assert_sp_array_equal(result, expected)
+
+
 def test_setting_fill_value_updates():
     arr = SparseArray([0.0, np.nan], fill_value=0)
     arr.fill_value = np.nan
@@ -500,8 +524,8 @@ def test_array_interface(arr_data, arr):
         # copy=False semantics are only supported in NumPy>=2.
         return
 
-    msg = "Starting with NumPy 2.0, the behavior of the 'copy' keyword has changed"
-    with tm.assert_produces_warning(FutureWarning, match=msg):
+    # for sparse arrays, copy=False is never allowed
+    with pytest.raises(ValueError, match="Unable to avoid copy while creating"):
         np.array(arr, copy=False)
 
     # except when there are actually no sparse filled values

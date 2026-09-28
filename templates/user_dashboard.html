@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-header">
+  <div>
+    <p class="eyebrow">Candidate Portal</p>
+    <h1>Available Jobs</h1>
+  </div>
+  <div class="header-actions">
+    <a class="btn" href="/my-applications">My Applications</a>
+  </div>
+</section>
+
+<div class="panel">
+  <table>
+    <thead>
+      <tr>
+        <th>Job Title</th>
+        <th>Company</th>
+        <th>Location</th>
+        <th>Min Experience</th>
+        <th>Apply</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for job in jobs %}
+      <tr>
+        <td>{{ job.job_title }}</td>
+        <td>{{ job.company }}</td>
+        <td>{{ job.location or '-' }}</td>
+        <td>{{ job.min_experience }} years</td>
+        <td>
+          <form method="post" action="{{ url_for('user_apply', job_id=job.job_id) }}">
+            <button class="btn small" type="submit">Apply</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="5" class="empty-state">No open jobs right now.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

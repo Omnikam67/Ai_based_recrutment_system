@@ -5,7 +5,8 @@ import numpy as np
 import math
 import inspect
 import scipy.optimize
-from scipy._lib._util import check_random_state, _transition_to_rng
+from scipy._lib._util import (check_random_state, _transition_to_rng,
+                              wrapped_inspect_signature)
 
 __all__ = ['basinhopping']
 
@@ -84,7 +85,7 @@ class BasinHoppingRunner:
         self.energy = minres.fun
         self.incumbent_minres = minres  # best minimize result found so far
         if self.disp:
-            print("basinhopping step %d: f %g" % (self.nstep, self.energy))
+            print(f"basinhopping step {self.nstep}: f {self.energy:g}")
 
         # initialize storage class
         self.storage = Storage(minres)
@@ -129,7 +130,7 @@ class BasinHoppingRunner:
         # steps are not sufficient.
         accept = True
         for test in self.accept_tests:
-            if inspect.signature(test) == _new_accept_test_signature:
+            if wrapped_inspect_signature(test) == _new_accept_test_signature:
                 testres = test(res_new=minres, res_old=self.incumbent_minres)
             else:
                 testres = test(f_new=energy_after_quench, x_new=x_after_quench,
@@ -171,8 +172,10 @@ class BasinHoppingRunner:
         if self.disp:
             self.print_report(minres.fun, accept)
             if new_global_min:
-                print("found new global minimum on step %d with function"
-                      " value %g" % (self.nstep, self.energy))
+                print(
+                    f"found new global minimum on step {self.nstep} with "
+                    f"function value {self.energy:g}"
+                )
 
         # save some variables as BasinHoppingRunner attributes
         self.xtrial = minres.x
@@ -184,9 +187,11 @@ class BasinHoppingRunner:
     def print_report(self, energy_trial, accept):
         """print a status update"""
         minres = self.storage.get_lowest()
-        print("basinhopping step %d: f %g trial_f %g accepted %d "
-              " lowest_f %g" % (self.nstep, self.energy, energy_trial,
-                                accept, minres.fun))
+        print(
+            f"basinhopping step {self.nstep}: f {self.energy:g} "
+            f"trial_f {energy_trial:g} accepted {accept} "
+            f"lowest_f {minres.fun:g}"
+        )
 
 
 class AdaptiveStepsize:
@@ -366,7 +371,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
         in the dict `minimizer_kwargs`
     x0 : array_like
         Initial guess.
-    niter : integer, optional
+    niter : int, optional
         The number of basin-hopping iterations. There will be a total of
         ``niter + 1`` runs of the local minimizer.
     T : float, optional
@@ -410,11 +415,11 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
         be used, for example, to save the lowest N minima found. Also,
         `callback` can be used to specify a user defined stop criterion by
         optionally returning True to stop the `basinhopping` routine.
-    interval : integer, optional
+    interval : int, optional
         interval for how often to update the `stepsize`
     disp : bool, optional
         Set to True to print status messages
-    niter_success : integer, optional
+    niter_success : int, optional
         Stop the run if the global minimum candidate remains the same for this
         number of iterations.
     rng : `numpy.random.Generator`, optional
@@ -451,7 +456,9 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
         cause of the termination. The ``OptimizeResult`` object returned by the
         selected minimizer at the lowest minimum is also contained within this
         object and can be accessed through the ``lowest_optimization_result``
-        attribute.  See `OptimizeResult` for a description of other attributes.
+        attribute. ``lowest_optimization_result`` will only be updated if a
+        local minimization was successful.          
+        See `OptimizeResult` for a description of other attributes.
 
     See Also
     --------

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="auth-shell">
+  <div class="login-panel">
+    <h1>HR Login</h1>
+    <p>Sign in to access the recruitment dashboard.</p>
+
+    <form class="form" method="post">
+      <label>
+        Role
+        <select name="role" required>
+          <option value="HR">HR</option>
+          <option value="User">User</option>
+        </select>
+      </label>
+
+      <label>
+        Email
+        <input type="email" name="email" placeholder="Enter email" required>
+      </label>
+
+      <label>
+        Password
+        <input type="password" name="password" placeholder="Enter password" required>
+      </label>
+
+      <button class="btn" type="submit">Login</button>
+    </form>
+
+    <p style="margin-top: 16px; font-size: 0.9rem; color: #475569;">
+      Demo HR: hr@example.com / admin123<br>
+      Demo User: user@example.com / user123<br><br>
+      New user? <a href="/register">Create an account</a>
+    </p>
+  </div>
+</div>
+{% endblock %}

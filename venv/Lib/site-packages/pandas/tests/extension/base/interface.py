@@ -1,5 +1,3 @@
-import warnings
-
 import numpy as np
 import pytest
 
@@ -21,10 +19,10 @@ class BaseInterfaceTests:
     # ------------------------------------------------------------------------
 
     def test_len(self, data):
-        assert len(data) == 100
+        assert len(data) == 10
 
     def test_size(self, data):
-        assert data.size == 100
+        assert data.size == 10
 
     def test_ndim(self, data):
         assert data.ndim == 1
@@ -33,7 +31,7 @@ class BaseInterfaceTests:
         # GH-20761
         assert data._can_hold_na is True
 
-    def test_contains(self, data, data_missing):
+    def test_contains(self, data, data_missing, using_nan_is_na):
         # GH-37867
         # Tests for membership checks. Membership checks for nan-likes is tricky and
         # the settled on rule is: `nan_like in arr` is True if nan_like is
@@ -57,7 +55,21 @@ class BaseInterfaceTests:
                 # type check for e.g. two instances of Decimal("NAN")
                 continue
             assert na_value_obj not in data
-            assert na_value_obj not in data_missing
+            if (
+                using_nan_is_na
+                and isinstance(na_value_obj, float)
+                and isinstance(
+                    data,
+                    (
+                        pd.core.arrays.BaseMaskedArray,
+                        pd.core.arrays.ArrowExtensionArray,
+                    ),
+                )
+            ):
+                # TODO: wrong place for this override
+                assert na_value_obj in data_missing
+            else:
+                assert na_value_obj not in data_missing
 
     def test_memory_usage(self, data):
         s = pd.Series(data)
@@ -84,27 +96,15 @@ class BaseInterfaceTests:
             # copy=False semantics are only supported in NumPy>=2.
             return
 
-        warning_raised = False
-        msg = "Starting with NumPy 2.0, the behavior of the 'copy' keyword has changed"
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
+        try:
             result_nocopy1 = np.array(data, copy=False)
-            assert len(w) <= 1
-            if len(w):
-                warning_raised = True
-                assert msg in str(w[0].message)
+        except ValueError:
+            # An error is always acceptable for `copy=False`
+            return
 
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-            result_nocopy2 = np.array(data, copy=False)
-            assert len(w) <= 1
-            if len(w):
-                warning_raised = True
-                assert msg in str(w[0].message)
-
-        if not warning_raised:
-            # If copy=False was given and did not raise, these must share the same data
-            assert np.may_share_memory(result_nocopy1, result_nocopy2)
+        result_nocopy2 = np.array(data, copy=False)
+        # If copy=False was given and did not raise, these must share the same data
+        assert np.may_share_memory(result_nocopy1, result_nocopy2)
 
     def test_is_extension_array_dtype(self, data):
         assert is_extension_array_dtype(data)

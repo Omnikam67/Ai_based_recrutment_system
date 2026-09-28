@@ -7,8 +7,6 @@ import textwrap
 import numpy as np
 import pytest
 
-from pandas._config import using_string_dtype
-
 from pandas.compat import (
     HAS_PYARROW,
     IS64,
@@ -46,7 +44,7 @@ def test_info_empty():
     result = buf.getvalue()
     expected = textwrap.dedent(
         """\
-        <class 'pandas.core.frame.DataFrame'>
+        <class 'pandas.DataFrame'>
         RangeIndex: 0 entries
         Empty DataFrame\n"""
     )
@@ -214,7 +212,7 @@ def test_info_memory():
     bytes = float(df.memory_usage().sum())
     expected = textwrap.dedent(
         f"""\
-    <class 'pandas.core.frame.DataFrame'>
+    <class 'pandas.DataFrame'>
     RangeIndex: 2 entries, 0 to 1
     Data columns (total 1 columns):
      #   Column  Non-Null Count  Dtype
@@ -518,7 +516,7 @@ def test_info_int_columns(using_infer_string):
     result = buf.getvalue()
     expected = textwrap.dedent(
         f"""\
-        <class 'pandas.core.frame.DataFrame'>
+        <class 'pandas.DataFrame'>
         Index: 2 entries, A to B
         Data columns (total 2 columns):
          #   Column  Non-Null Count  Dtype
@@ -526,13 +524,12 @@ def test_info_int_columns(using_infer_string):
          0   1       2 non-null      int64
          1   2       2 non-null      int64
         dtypes: int64(2)
-        memory usage: {'50.0' if using_infer_string and HAS_PYARROW else '48.0+'} bytes
+        memory usage: {"50.0" if using_infer_string and HAS_PYARROW else "48.0+"} bytes
         """
     )
     assert result == expected
 
 
-@pytest.mark.xfail(using_string_dtype(), reason="TODO(infer_string)")
 def test_memory_usage_empty_no_warning(using_infer_string):
     # GH#50066
     df = DataFrame(index=["a", "b"])

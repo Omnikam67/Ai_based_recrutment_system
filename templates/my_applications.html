@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-header">
+  <div>
+    <p class="eyebrow">Applications</p>
+    <h1>My Application Status</h1>
+  </div>
+  <div class="header-actions">
+    <a class="btn secondary" href="/user-dashboard">Back to Jobs</a>
+  </div>
+</section>
+
+<div class="panel">
+  <table>
+    <thead>
+      <tr>
+        <th>Job Title</th>
+        <th>Company</th>
+        <th>Location</th>
+        <th>Date</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for app in applications %}
+      <tr>
+        <td>{{ app.job_title }}</td>
+        <td>{{ app.company }}</td>
+        <td>{{ app.location or '-' }}</td>
+        <td>{{ app.application_date }}</td>
+        <td>{{ app.status }}</td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="5" class="empty-state">You have not applied to any jobs yet.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

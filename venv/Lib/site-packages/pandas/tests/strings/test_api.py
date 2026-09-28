@@ -1,3 +1,5 @@
+import weakref
+
 import numpy as np
 import pytest
 
@@ -8,7 +10,6 @@ from pandas import (
     MultiIndex,
     Series,
     _testing as tm,
-    option_context,
 )
 from pandas.core.strings.accessor import StringMethods
 
@@ -20,7 +21,9 @@ _any_allowed_skipna_inferred_dtype = [
     ("empty", []),
     ("mixed-integer", ["a", np.nan, 2]),
 ]
-ids, _ = zip(*_any_allowed_skipna_inferred_dtype)  # use inferred type as id
+ids, _ = zip(
+    *_any_allowed_skipna_inferred_dtype, strict=True
+)  # use inferred type as id
 
 
 @pytest.fixture(params=_any_allowed_skipna_inferred_dtype, ids=ids)
@@ -66,6 +69,15 @@ def test_api(any_string_dtype):
     # GH 6106, GH 9322
     assert Series.str is StringMethods
     assert isinstance(Series([""], dtype=any_string_dtype).str, StringMethods)
+
+
+def test_no_circular_reference(any_string_dtype):
+    # GH 47667
+    ser = Series([""], dtype=any_string_dtype)
+    ref = weakref.ref(ser)
+    ser.str  # Used to cache and cause circular reference
+    del ser
+    assert ref() is None
 
 
 def test_api_mi_raises():
@@ -170,13 +182,12 @@ def test_api_per_method(
 
     if inferred_dtype in allowed_types:
         # xref GH 23555, GH 23556
-        with option_context("future.no_silent_downcasting", True):
-            method(*args, **kwargs)  # works!
+        method(*args, **kwargs)  # works!
     else:
         # GH 23011, GH 23163
         msg = (
             f"Cannot use .str.{method_name} with values of "
-            f"inferred dtype {repr(inferred_dtype)}."
+            f"inferred dtype {inferred_dtype!r}."
             "|a bytes-like object is required, not 'str'"
         )
         with pytest.raises(TypeError, match=msg):

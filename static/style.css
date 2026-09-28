@@ -49,6 +49,15 @@ a:hover { text-decoration: underline; }
   opacity: 0.9;
 }
 
+.user-badge {
+  color: #dbeafe;
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.08);
+}
+
 main {
   width: min(1100px, 92%);
   margin: 28px auto 40px;
@@ -186,6 +195,31 @@ th {
 .flash.success { background: #ecfdf5; border-color: #16a34a; color: #166534; }
 .flash.danger { background: #fef2f2; border-color: #dc2626; color: #991b1b; }
 .flash.warning { background: #fff7ed; border-color: #f59e0b; color: #9a5b00; }
+
+.auth-shell {
+  min-height: 70vh;
+  display: grid;
+  place-items: center;
+}
+
+.login-panel {
+  width: min(420px, 92%);
+  background: rgba(255,255,255,0.94);
+  border: 1px solid #dfe7f3;
+  border-radius: 18px;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+  padding: 32px 24px;
+}
+
+.login-panel h1 {
+  margin: 0 0 8px;
+  font-size: 2rem;
+}
+
+.login-panel p {
+  margin: 0 0 22px;
+  color: #64748b;
+}
 
 .form-panel {
   padding: 24px;

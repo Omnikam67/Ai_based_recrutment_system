@@ -1,6 +1,9 @@
+import warnings
+
 from itertools import product
+
 from numpy.testing import (assert_, assert_allclose, assert_array_less,
-                           assert_equal, assert_no_warnings, suppress_warnings)
+                           assert_equal, assert_no_warnings)
 import pytest
 from pytest import raises as assert_raises
 import numpy as np
@@ -9,7 +12,7 @@ from scipy.integrate import solve_ivp, RK23, RK45, DOP853, Radau, BDF, LSODA
 from scipy.integrate import OdeSolution
 from scipy.integrate._ivp.common import num_jac, select_initial_step
 from scipy.integrate._ivp.base import ConstantDenseOutput
-from scipy.sparse import coo_matrix, csc_matrix
+from scipy.sparse import csc_array, coo_array, csc_matrix
 
 
 def fun_zero(t, y):
@@ -48,7 +51,7 @@ def jac_rational(t, y):
 
 
 def jac_rational_sparse(t, y):
-    return csc_matrix([
+    return csc_array([
         [0, 1 / t],
         [-2 * y[1] ** 2 / (t * (y[0] - 1) ** 2),
          (y[0] + 4 * y[1] - 1) / (t * (y[0] - 1))]
@@ -115,7 +118,7 @@ def medazko_sparsity(n):
     cols = np.hstack(cols)
     rows = np.hstack(rows)
 
-    return coo_matrix((np.ones_like(cols), (cols, rows)))
+    return coo_array((np.ones_like(cols), (cols, rows)))
 
 
 def fun_complex(t, y):
@@ -127,7 +130,7 @@ def jac_complex(t, y):
 
 
 def jac_complex_sparse(t, y):
-    return csc_matrix(jac_complex(t, y))
+    return csc_array(jac_complex(t, y))
 
 
 def sol_complex(t):
@@ -171,7 +174,7 @@ def test_duplicate_timestamps():
     assert sol.success
     assert_equal(sol.status, 1)
 
-@pytest.mark.thread_unsafe
+
 def test_integration():
     rtol = 1e-3
     atol = 1e-6
@@ -188,10 +191,12 @@ def test_integration():
         else:
             fun = fun_rational
 
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning,
-                       "The following arguments have no effect for a chosen "
-                       "solver: `jac`")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                "The following arguments have no effect for a chosen solver: `jac`",
+                UserWarning,
+            )
             res = solve_ivp(fun, t_span, y0, rtol=rtol,
                             atol=atol, method=method, dense_output=True,
                             jac=jac, vectorized=vectorized)
@@ -236,7 +241,6 @@ def test_integration():
         assert_allclose(res.sol(res.t), res.y, rtol=1e-15, atol=1e-15)
 
 
-@pytest.mark.thread_unsafe
 def test_integration_complex():
     rtol = 1e-3
     atol = 1e-6
@@ -245,10 +249,12 @@ def test_integration_complex():
     tc = np.linspace(t_span[0], t_span[1])
     for method, jac in product(['RK23', 'RK45', 'DOP853', 'BDF'],
                                [None, jac_complex, jac_complex_sparse]):
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning,
-                       "The following arguments have no effect for a chosen "
-                       "solver: `jac`")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                "The following arguments have no effect for a chosen solver: `jac`",
+                UserWarning,
+            )
             res = solve_ivp(fun_complex, t_span, y0, method=method,
                             dense_output=True, rtol=rtol, atol=atol, jac=jac)
 
@@ -279,6 +285,22 @@ def test_integration_complex():
         e = compute_error(yc, yc_true, rtol, atol)
 
         assert np.all(e < 5)
+
+
+def test_integration_complex_sparse():
+    # Regression test for gh-24671: solve_ivp with a complex ODE and
+    # jac_sparsity should not emit ComplexWarning.
+    rtol = 1e-3
+    atol = 1e-6
+    y0 = [0.5 + 1j]
+    t_span = [0, 1]
+    sparsity = csc_array(np.ones((1, 1)))
+    res = solve_ivp(fun_complex, t_span, y0, method='BDF',
+                    rtol=rtol, atol=atol, jac_sparsity=sparsity)
+    assert res.success
+    y_true = sol_complex(res.t)
+    e = compute_error(res.y, y_true, rtol, atol)
+    assert np.all(e < 5)
 
 
 @pytest.mark.fail_slow(5)
@@ -315,7 +337,7 @@ def test_integration_const_jac():
     y0 = [0, 2]
     t_span = [0, 2]
     J = jac_linear()
-    J_sparse = csc_matrix(J)
+    J_sparse = csc_array(J)
 
     for method, jac in product(['Radau', 'BDF'], [J, J_sparse]):
         res = solve_ivp(fun_linear, t_span, y0, rtol=rtol, atol=atol,
@@ -764,7 +786,6 @@ def test_t_eval_dense_output():
     assert_(np.all(e < 5))
 
 
-@pytest.mark.thread_unsafe
 def test_t_eval_early_event():
     def early_event(t, y):
         return t - 7
@@ -777,10 +798,12 @@ def test_t_eval_early_event():
     t_span = [5, 9]
     t_eval = np.linspace(7.5, 9, 16)
     for method in ['RK23', 'RK45', 'DOP853', 'Radau', 'BDF', 'LSODA']:
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning,
-                       "The following arguments have no effect for a chosen "
-                       "solver: `jac`")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                "The following arguments have no effect for a chosen solver: `jac`",
+                UserWarning,
+            )
             res = solve_ivp(fun_rational, t_span, y0, rtol=rtol, atol=atol,
                             method=method, t_eval=t_eval, events=early_event,
                             jac=jac_rational)
@@ -1001,7 +1024,8 @@ def test_num_jac():
     assert_allclose(J_num, J_true, rtol=1e-5, atol=1e-5)
 
 
-def test_num_jac_sparse():
+@pytest.mark.parametrize("structure_type", [csc_array, csc_matrix, np.array])
+def test_num_jac_sparse(structure_type):
     def fun(t, y):
         e = y[1:]**3 - y[:-1]**2
         z = np.zeros(y.shape[1])
@@ -1016,7 +1040,7 @@ def test_num_jac_sparse():
         A[-1, -1] = 1
         A[-1, -2] = 1
 
-        return A
+        return structure_type(A)
 
     np.random.seed(0)
     n = 20
@@ -1129,7 +1153,6 @@ def test_args():
     assert_allclose(zfinalevents[2], [zfinal])
 
 
-@pytest.mark.thread_unsafe
 def test_array_rtol():
     # solve_ivp had a bug with array_like `rtol`; see gh-15482
     # check that it's fixed

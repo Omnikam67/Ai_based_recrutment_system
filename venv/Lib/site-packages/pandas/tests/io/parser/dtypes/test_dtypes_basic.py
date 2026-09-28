@@ -2,6 +2,7 @@
 Tests dtype specification during parsing
 for all of the parsers defined in parsers.py
 """
+
 from collections import defaultdict
 from io import StringIO
 
@@ -28,7 +29,9 @@ xfail_pyarrow = pytest.mark.usefixtures("pyarrow_xfail")
 @pytest.mark.parametrize("dtype", [str, object])
 @pytest.mark.parametrize("check_orig", [True, False])
 @pytest.mark.usefixtures("pyarrow_xfail")
-def test_dtype_all_columns(all_parsers, dtype, check_orig, using_infer_string):
+def test_dtype_all_columns(
+    all_parsers, dtype, check_orig, using_infer_string, temp_file
+):
     # see gh-3795, gh-6607
     parser = all_parsers
 
@@ -38,20 +41,19 @@ def test_dtype_all_columns(all_parsers, dtype, check_orig, using_infer_string):
         index=["1A", "1B", "1C", "1D", "1E"],
     )
 
-    with tm.ensure_clean("__passing_str_as_dtype__.csv") as path:
-        df.to_csv(path)
+    df.to_csv(temp_file)
 
-        result = parser.read_csv(path, dtype=dtype, index_col=0)
+    result = parser.read_csv(temp_file, dtype=dtype, index_col=0)
 
-        if check_orig:
-            expected = df.copy()
-            result = result.astype(float)
-        elif using_infer_string and dtype is str:
-            expected = df.astype(str)
-        else:
-            expected = df.astype(str).astype(object)
+    if check_orig:
+        expected = df.copy()
+        result = result.astype(float)
+    elif using_infer_string and dtype is str:
+        expected = df.astype(str)
+    else:
+        expected = df.astype(str).astype(object)
 
-        tm.assert_frame_equal(result, expected)
+    tm.assert_frame_equal(result, expected)
 
 
 @pytest.mark.usefixtures("pyarrow_xfail")
@@ -131,16 +133,13 @@ def test_dtype_with_converters(all_parsers):
     tm.assert_frame_equal(result, expected)
 
 
-@pytest.mark.parametrize(
-    "dtype", list(np.typecodes["AllInteger"] + np.typecodes["Float"])
-)
-def test_numeric_dtype(all_parsers, dtype):
+def test_numeric_dtype(all_parsers, any_real_numpy_dtype):
     data = "0\n1"
     parser = all_parsers
-    expected = DataFrame([0, 1], dtype=dtype)
+    expected = DataFrame([0, 1], dtype=any_real_numpy_dtype)
 
-    result = parser.read_csv(StringIO(data), header=None, dtype=dtype)
-    tm.assert_frame_equal(expected, result)
+    result = parser.read_csv(StringIO(data), header=None, dtype=any_real_numpy_dtype)
+    tm.assert_frame_equal(expected, result, check_column_type=False)
 
 
 @pytest.mark.usefixtures("pyarrow_xfail")
@@ -520,9 +519,6 @@ def test_dtype_backend_pyarrow(all_parsers, request):
     tm.assert_frame_equal(result, expected)
 
 
-# pyarrow engine failing:
-# https://github.com/pandas-dev/pandas/issues/56136
-@pytest.mark.usefixtures("pyarrow_xfail")
 def test_ea_int_avoid_overflow(all_parsers):
     # GH#32134
     parser = all_parsers
@@ -596,7 +592,6 @@ z,a"""
     tm.assert_frame_equal(result, expected)
 
 
-@xfail_pyarrow
 def test_accurate_parsing_of_large_integers(all_parsers):
     # GH#52505
     data = """SYMBOL,MOMENT,ID,ID_DEAL

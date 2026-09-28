@@ -106,12 +106,11 @@ def test_series_not_equal_metadata_mismatch(kwargs):
 
 
 @pytest.mark.parametrize("data1,data2", [(0.12345, 0.12346), (0.1235, 0.1236)])
-@pytest.mark.parametrize("dtype", ["float32", "float64", "Float32"])
 @pytest.mark.parametrize("decimals", [0, 1, 2, 3, 5, 10])
-def test_less_precise(data1, data2, dtype, decimals):
+def test_less_precise(data1, data2, any_float_dtype, decimals):
     rtol = 10**-decimals
-    s1 = Series([data1], dtype=dtype)
-    s2 = Series([data2], dtype=dtype)
+    s1 = Series([data1], dtype=any_float_dtype)
+    s2 = Series([data2], dtype=any_float_dtype)
 
     if decimals in (5, 10) or (decimals >= 3 and abs(data1 - data2) >= 0.0005):
         msg = "Series values are different"
@@ -138,7 +137,7 @@ def test_less_precise(data1, data2, dtype, decimals):
             DataFrame.from_records(
                 {"a": [1.0, 2.0], "b": [2.1, 1.5], "c": ["l1", "l2"]}, index=["a", "b"]
             ).c,
-            "MultiIndex level \\[0\\] are different",
+            "Series\\.index level \\[0\\] are different",
         ),
     ],
 )
@@ -240,8 +239,8 @@ Series values are different \\(100.0 %\\)
 \\[left\\]:  \\[1514764800000000000, 1514851200000000000, 1514937600000000000\\]
 \\[right\\]: \\[1549065600000000000, 1549152000000000000, 1549238400000000000\\]"""
 
-    s1 = Series(pd.date_range("2018-01-01", periods=3, freq="D"))
-    s2 = Series(pd.date_range("2019-02-02", periods=3, freq="D"))
+    s1 = Series(pd.date_range("2018-01-01", periods=3, freq="D", unit="ns"))
+    s2 = Series(pd.date_range("2019-02-02", periods=3, freq="D", unit="ns"))
 
     with pytest.raises(AssertionError, match=msg):
         tm.assert_series_equal(s1, s2, rtol=rtol)
@@ -467,9 +466,44 @@ def test_assert_series_equal_int_tol():
     )
 
 
-def test_assert_series_equal_index_exact_default():
+@pytest.mark.parametrize(
+    "left_idx, right_idx",
+    [
+        (
+            pd.Index([0, 0.2, 0.4, 0.6, 0.8, 1]),
+            pd.Index(np.linspace(0, 1, 6)),
+        ),
+        (
+            pd.MultiIndex.from_arrays([[0, 0, 0, 0, 1, 1], [0, 0.2, 0.4, 0.6, 0.8, 1]]),
+            pd.MultiIndex.from_arrays([[0, 0, 0, 0, 1, 1], np.linspace(0, 1, 6)]),
+        ),
+        (
+            pd.MultiIndex.from_arrays(
+                [["a", "a", "a", "b", "b", "b"], [1, 2, 3, 4, 5, 10000000000001]]
+            ),
+            pd.MultiIndex.from_arrays(
+                [["a", "a", "a", "b", "b", "b"], [1, 2, 3, 4, 5, 10000000000002]]
+            ),
+        ),
+        pytest.param(
+            pd.Index([1, 2, 3, 4, 5, 10000000000001]),
+            pd.Index([1, 2, 3, 4, 5, 10000000000002]),
+            marks=pytest.mark.xfail(reason="check_exact_index defaults to True"),
+        ),
+        pytest.param(
+            pd.MultiIndex.from_arrays(
+                [[0, 0, 0, 0, 1, 1], [1, 2, 3, 4, 5, 10000000000001]]
+            ),
+            pd.MultiIndex.from_arrays(
+                [[0, 0, 0, 0, 1, 1], [1, 2, 3, 4, 5, 10000000000002]]
+            ),
+            marks=pytest.mark.xfail(reason="check_exact_index defaults to True"),
+        ),
+    ],
+)
+def test_assert_series_equal_check_exact_index_default(left_idx, right_idx):
     # GH#57067
-    ser1 = Series(np.zeros(6, dtype=int), [0, 0.2, 0.4, 0.6, 0.8, 1])
-    ser2 = Series(np.zeros(6, dtype=int), np.linspace(0, 1, 6))
+    ser1 = Series(np.zeros(6, dtype=int), left_idx)
+    ser2 = Series(np.zeros(6, dtype=int), right_idx)
     tm.assert_series_equal(ser1, ser2)
     tm.assert_frame_equal(ser1.to_frame(), ser2.to_frame())

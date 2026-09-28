@@ -13,10 +13,22 @@
     <small>Skill Gap Analytics</small>
   </div>
   <div class="nav-links">
-    <a href="/">Dashboard</a>
-    <a href="/candidates">Candidates</a>
-    <a href="/jobs">Jobs</a>
-    <a href="/applications">Applications</a>
+    {% if session.get('user_id') %}
+      {% if session.get('user_role') == 'HR' %}
+        <a href="/">Dashboard</a>
+        <a href="/candidates">Candidates</a>
+        <a href="/jobs">Jobs</a>
+        <a href="/applications">Applications</a>
+      {% else %}
+        <a href="/user-dashboard">My Jobs</a>
+        <a href="/my-applications">My Applications</a>
+      {% endif %}
+      <span class="user-badge">Hi, {{ session.get('user_name', 'User') }} ({{ session.get('user_role') }})</span>
+      <a href="/logout">Logout</a>
+    {% else %}
+      <a href="/login">Login</a>
+      <a href="/register">Register</a>
+    {% endif %}
   </div>
 </nav>
 <main>

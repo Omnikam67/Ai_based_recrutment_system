@@ -3,6 +3,7 @@ Tests that duplicate columns are handled appropriately when parsed by the
 CSV engine. In general, the expected result is that they are either thoroughly
 de-duplicated (if mangling requested) or ignored otherwise.
 """
+
 from io import StringIO
 
 import pytest
@@ -135,7 +136,7 @@ def test_mangled_unnamed_placeholders(all_parsers):
         expected = DataFrame(columns=Index([], dtype="str"))
 
         for j in range(i + 1):
-            col_name = "Unnamed: 0" + f".{1*j}" * min(j, 1)
+            col_name = "Unnamed: 0" + f".{1 * j}" * min(j, 1)
             expected.insert(loc=0, column=col_name, value=[0, 1, 2])
 
         expected[orig_key] = orig_value

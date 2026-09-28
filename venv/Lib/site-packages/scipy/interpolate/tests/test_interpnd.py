@@ -1,8 +1,8 @@
 import os
 import sys
+import warnings
 
 import numpy as np
-from numpy.testing import suppress_warnings
 from pytest import raises as assert_raises
 import pytest
 from scipy._lib._array_api import xp_assert_close, assert_almost_equal
@@ -174,7 +174,6 @@ class TestLinearNDInterpolation:
         assert_almost_equal(ip(0.5, 0.5), ip2(0.5, 0.5))
 
     @pytest.mark.slow
-    @pytest.mark.thread_unsafe
     @pytest.mark.skipif(_IS_32BIT, reason='it fails on 32-bit')
     def test_threading(self):
         # This test was taken from issue 8856
@@ -238,8 +237,10 @@ class TestEstimateGradients2DGlobal:
             dz = interpnd.estimate_gradients_2d_global(tri, z, tol=1e-6)
 
             assert dz.shape == (6, 2)
-            xp_assert_close(dz, np.array(grad)[None,:] + 0*dz,
-                            rtol=1e-5, atol=1e-5, err_msg="item %d" % j)
+            xp_assert_close(
+                dz, np.array(grad)[None, :] + 0*dz, rtol=1e-5, atol=1e-5, 
+                err_msg=f"item {j}"
+            )
 
     def test_regression_2359(self):
         # Check regression --- for certain point sets, gradient
@@ -249,9 +250,12 @@ class TestEstimateGradients2DGlobal:
         tri = qhull.Delaunay(points)
 
         # This should not hang
-        with suppress_warnings() as sup:
-            sup.filter(interpnd.GradientEstimationWarning,
-                       "Gradient estimation did not converge")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                "Gradient estimation did not converge",
+                interpnd.GradientEstimationWarning
+            )
             interpnd.estimate_gradients_2d_global(tri, values, maxiter=1)
 
 
@@ -300,17 +304,22 @@ class TestCloughTocher2DInterpolator:
         ]
 
         for j, func in enumerate(funcs):
-            self._check_accuracy(func, tol=1e-13, atol=1e-7, rtol=1e-7,
-                                 err_msg="Function %d" % j)
-            self._check_accuracy(func, tol=1e-13, atol=1e-7, rtol=1e-7,
-                                 alternate=True,
-                                 err_msg="Function (alternate) %d" % j)
+            self._check_accuracy(
+                func, tol=1e-13, atol=1e-7, rtol=1e-7, err_msg=f"Function {j}"
+            )
+            self._check_accuracy(
+                func, tol=1e-13, atol=1e-7, rtol=1e-7, alternate=True, 
+                err_msg=f"Function (alternate) {j}"
+            )
             # check rescaling
-            self._check_accuracy(func, tol=1e-13, atol=1e-7, rtol=1e-7,
-                                 err_msg="Function (rescaled) %d" % j, rescale=True)
-            self._check_accuracy(func, tol=1e-13, atol=1e-7, rtol=1e-7,
-                                 alternate=True, rescale=True,
-                                 err_msg="Function (alternate, rescaled) %d" % j)
+            self._check_accuracy(
+                func, tol=1e-13, atol=1e-7, rtol=1e-7, 
+                err_msg=f"Function (rescaled) {j}", rescale=True
+            )
+            self._check_accuracy(
+                func, tol=1e-13, atol=1e-7, rtol=1e-7, alternate=True, rescale=True, 
+                err_msg=f"Function (alternate, rescaled) {j}"
+            )
 
     def test_quadratic_smoketest(self):
         # Should be reasonably accurate for quadratic functions
@@ -322,10 +331,12 @@ class TestCloughTocher2DInterpolator:
         ]
 
         for j, func in enumerate(funcs):
-            self._check_accuracy(func, tol=1e-9, atol=0.22, rtol=0,
-                                 err_msg="Function %d" % j)
-            self._check_accuracy(func, tol=1e-9, atol=0.22, rtol=0,
-                                 err_msg="Function %d" % j, rescale=True)
+            self._check_accuracy(
+                func, tol=1e-9, atol=0.22, rtol=0, err_msg=f"Function {j}"
+            )
+            self._check_accuracy(
+                func, tol=1e-9, atol=0.22, rtol=0, err_msg=f"Function {j}", rescale=True
+            )
 
     def test_tri_input(self):
         # Test at single points
@@ -379,10 +390,13 @@ class TestCloughTocher2DInterpolator:
                      rng.rand(30*30, 2)]
 
         for j, func in enumerate(funcs):
-            self._check_accuracy(func, x=grid, tol=1e-9, atol=5e-3, rtol=1e-2,
-                                 err_msg="Function %d" % j)
-            self._check_accuracy(func, x=grid, tol=1e-9, atol=5e-3, rtol=1e-2,
-                                 err_msg="Function %d" % j, rescale=True)
+            self._check_accuracy(
+                func, x=grid, tol=1e-9, atol=5e-3, rtol=1e-2, err_msg=f"Function {j}"
+            )
+            self._check_accuracy(
+                func, x=grid, tol=1e-9, atol=5e-3, rtol=1e-2, 
+                err_msg=f"Function {j}", rescale=True
+            )
 
     def test_wrong_ndim(self):
         x = np.random.randn(30, 3)
@@ -438,3 +452,87 @@ class TestCloughTocher2DInterpolator:
         w2 = ip(p2)
         xp_assert_close(w1, v1)
         xp_assert_close(w2, v2)
+
+
+@pytest.mark.parametrize("simplex_tolerance", [1, 10])
+@pytest.mark.parametrize(
+    "interpolation_class",
+    [interpnd.LinearNDInterpolator, interpnd.CloughTocher2DInterpolator]
+)
+def test_interp_from_boundary(interpolation_class, simplex_tolerance):
+    """Test that SciPy can interpolate to a regular grid from the boundary.
+
+    Based on gh-21910
+    """
+    coords = np.block(
+        [[0, np.arange(400, 500), np.zeros(100), 800],
+         [0, np.zeros(100), np.arange(400, 500), 800]]
+    )
+    values = np.ones(202)
+    interpolator = interpolation_class(coords.T, values)
+    results = interpolator(
+        np.mgrid[:500, :500].T, simplex_tolerance=simplex_tolerance
+    )
+    num_nans = np.count_nonzero(np.isnan(results))
+    if simplex_tolerance == 1:
+        # The default tolerance doesn't work when filling from a
+        # dense boundary
+        assert num_nans > 0
+    else:
+        # The larger tolerance allows QHull to assign a simplex
+        # for each point
+        assert num_nans == 0
+
+
+@pytest.mark.parametrize("simplex_tolerance", [1, 10])
+@pytest.mark.parametrize(
+    "interpolator_factory",
+    [interpnd.CloughTocher2DInterpolator, interpnd.LinearNDInterpolator]
+)
+def test_reproduction_NaN_on_points_linear_combination(
+    simplex_tolerance, interpolator_factory
+):
+    """Test that SciPy can interpolate to the edge of a triangle.
+
+    Based on gh-22831
+    """
+    inputs = np.array([[ 0.       ,  0.       ],
+                      [ 0.       ,  0.008016],
+                      [ 3.       , -2.       ]])
+    values = np.ones(len(inputs))
+    # Create the interpolator
+    interpolator = interpolator_factory(inputs, values)
+    t1 = 0.6
+    p1 = inputs[0]
+    p2 = inputs[2]
+    point_on_edge = p1 + t1 * (p2 - p1)
+    value = interpolator(*point_on_edge, simplex_tolerance=simplex_tolerance)
+    if simplex_tolerance == 1:
+        assert np.isnan(value)
+    else:
+        assert np.isfinite(value)
+
+@pytest.mark.parametrize("simplex_tolerance", [1, 10])
+@pytest.mark.parametrize(
+    "interpolator_factory",
+    [interpnd.CloughTocher2DInterpolator, interpnd.LinearNDInterpolator]
+)
+def test_reproduction_NaN_on_input_points(
+        simplex_tolerance, interpolator_factory
+):
+    """Test that SciPy can interpolate to the input points.
+
+    Based on gh-21279.
+    Should probably be generalized to a hypothesis test.
+    """
+    inputs = np.array([[-0.004167550182114899, 0.3422659245670766],
+                       [-0.0015600025635140293, 0.2293516674374961],
+                       [-0.0014546640482194341, 0.22508674815327132],
+                       [-0.0014520968885052055, 0.2212277697065949]])
+    values = np.ones_like(inputs[:, 0])
+    interpolator = interpolator_factory(inputs, values)
+    results = interpolator(inputs, simplex_tolerance=simplex_tolerance)
+    if simplex_tolerance == 1:
+        assert np.any(np.isnan(results))
+    else:
+        assert np.all(np.isfinite(results))

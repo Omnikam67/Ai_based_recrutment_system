@@ -17,9 +17,9 @@ def datetime_frame() -> DataFrame:
     Columns are ['A', 'B', 'C', 'D']
     """
     return DataFrame(
-        np.random.default_rng(2).standard_normal((100, 4)),
+        np.random.default_rng(2).standard_normal((10, 4)),
         columns=Index(list("ABCD")),
-        index=date_range("2000-01-01", periods=100, freq="B"),
+        index=date_range("2000-01-01", periods=10, freq="B"),
     )
 
 
@@ -90,9 +90,9 @@ def timezone_frame():
     """
     df = DataFrame(
         {
-            "A": date_range("20130101", periods=3),
-            "B": date_range("20130101", periods=3, tz="US/Eastern"),
-            "C": date_range("20130101", periods=3, tz="CET"),
+            "A": date_range("20130101", periods=3, unit="ns"),
+            "B": date_range("20130101", periods=3, tz="US/Eastern", unit="ns"),
+            "C": date_range("20130101", periods=3, tz="CET", unit="ns"),
         }
     )
     df.iloc[1, 1] = NaT

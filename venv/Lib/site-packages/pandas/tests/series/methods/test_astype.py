@@ -10,6 +10,7 @@ import numpy as np
 import pytest
 
 from pandas._libs.tslibs import iNaT
+from pandas.errors import Pandas4Warning
 import pandas.util._test_decorators as td
 
 from pandas import (
@@ -164,14 +165,15 @@ class TestAstype:
 
     @pytest.mark.parametrize("dtype", [str, np.str_])
     @pytest.mark.parametrize(
-        "series",
+        "data",
         [
-            Series([string.digits * 10, rand_str(63), rand_str(64), rand_str(1000)]),
-            Series([string.digits * 10, rand_str(63), rand_str(64), np.nan, 1.0]),
+            [string.digits * 10, rand_str(63), rand_str(64), rand_str(1000)],
+            [string.digits * 10, rand_str(63), rand_str(64), np.nan, 1.0],
         ],
     )
-    def test_astype_str_map(self, dtype, series, using_infer_string):
+    def test_astype_str_map(self, dtype, data, using_infer_string):
         # see GH#4405
+        series = Series(data)
         using_string_dtype = using_infer_string and dtype is str
         result = series.astype(dtype)
         if using_string_dtype:
@@ -255,7 +257,7 @@ class TestAstype:
         assert ser.dtype == np.object_
 
     def test_astype_datetime64tz(self):
-        ser = Series(date_range("20130101", periods=3, tz="US/Eastern"))
+        ser = Series(date_range("20130101", periods=3, tz="US/Eastern", unit="ns"))
 
         # astype
         result = ser.astype(object)
@@ -281,7 +283,9 @@ class TestAstype:
             Series(ser.values).astype(ser.dtype)
 
         result = ser.astype("datetime64[ns, CET]")
-        expected = Series(date_range("20130101 06:00:00", periods=3, tz="CET"))
+        expected = Series(
+            date_range("20130101 06:00:00", periods=3, tz="CET", unit="ns")
+        )
         tm.assert_series_equal(result, expected)
 
     def test_astype_str_cast_dt64(self):
@@ -301,7 +305,7 @@ class TestAstype:
     def test_astype_str_cast_td64(self):
         # see GH#9757
 
-        td = Series([Timedelta(1, unit="d")])
+        td = Series([Timedelta(1, unit="D")])
         ser = td.astype(str)
 
         expected = Series(["1 days"], dtype="str")
@@ -346,10 +350,9 @@ class TestAstype:
             with pytest.raises((ValueError, TypeError), match=msg):
                 ser.astype(float, errors=errors)
 
-    @pytest.mark.parametrize("dtype", [np.float16, np.float32, np.float64])
-    def test_astype_from_float_to_str(self, dtype):
+    def test_astype_from_float_to_str(self, any_float_dtype):
         # https://github.com/pandas-dev/pandas/issues/36451
-        ser = Series([0.1], dtype=dtype)
+        ser = Series([0.1], dtype=any_float_dtype)
         result = ser.astype(str)
         expected = Series(["0.1"], dtype="str")
         tm.assert_series_equal(result, expected)
@@ -380,21 +383,19 @@ class TestAstype:
         assert as_typed.name == ser.name
 
     @pytest.mark.parametrize("value", [np.nan, np.inf])
-    @pytest.mark.parametrize("dtype", [np.int32, np.int64])
-    def test_astype_cast_nan_inf_int(self, dtype, value):
+    def test_astype_cast_nan_inf_int(self, any_int_numpy_dtype, value):
         # gh-14265: check NaN and inf raise error when converting to int
         msg = "Cannot convert non-finite values \\(NA or inf\\) to integer"
         ser = Series([value])
 
         with pytest.raises(ValueError, match=msg):
-            ser.astype(dtype)
+            ser.astype(any_int_numpy_dtype)
 
-    @pytest.mark.parametrize("dtype", [int, np.int8, np.int64])
-    def test_astype_cast_object_int_fail(self, dtype):
+    def test_astype_cast_object_int_fail(self, any_int_numpy_dtype):
         arr = Series(["car", "house", "tree", "1"])
         msg = r"invalid literal for int\(\) with base 10: 'car'"
         with pytest.raises(ValueError, match=msg):
-            arr.astype(dtype)
+            arr.astype(any_int_numpy_dtype)
 
     def test_astype_float_to_uint_negatives_raise(
         self, float_numpy_dtype, any_unsigned_int_numpy_dtype
@@ -468,13 +469,9 @@ class TestAstype:
         expected = Series(True, dtype="bool")
         tm.assert_series_equal(result, expected)
 
-    @pytest.mark.parametrize(
-        "dtype",
-        tm.ALL_INT_EA_DTYPES + tm.FLOAT_EA_DTYPES,
-    )
-    def test_astype_ea_to_datetimetzdtype(self, dtype):
+    def test_astype_ea_to_datetimetzdtype(self, any_numeric_ea_dtype):
         # GH37553
-        ser = Series([4, 0, 9], dtype=dtype)
+        ser = Series([4, 0, 9], dtype=any_numeric_ea_dtype)
         result = ser.astype(DatetimeTZDtype(tz="US/Pacific"))
 
         expected = Series(
@@ -513,7 +510,7 @@ class TestAstypeString:
             ([1, None], "UInt16"),
             (["1/1/2021", "2/1/2021"], "period[M]"),
             (["1/1/2021", "2/1/2021", NaT], "period[M]"),
-            (["1 Day", "59 Days", NaT], "timedelta64[ns]"),
+            (["1 Day", "59 Days", NaT], "timedelta64[us]"),
             # currently no way to parse IntervalArray from a list of strings
         ],
     )
@@ -584,10 +581,7 @@ class TestAstypeCategorical:
         ser = Series(np.random.default_rng(2).integers(0, 10000, 100)).sort_values()
         ser = cut(ser, range(0, 10500, 500), right=False, labels=cat)
 
-        msg = (
-            "dtype '<class 'pandas.core.arrays.categorical.Categorical'>' "
-            "not understood"
-        )
+        msg = "dtype '<class 'pandas.Categorical'>' not understood"
         with pytest.raises(TypeError, match=msg):
             ser.astype(Categorical)
         with pytest.raises(TypeError, match=msg):
@@ -630,8 +624,11 @@ class TestAstypeCategorical:
 
         # different categories
         dtype = CategoricalDtype(list("adc"), dtype_ordered)
-        result = ser.astype(dtype)
-        expected = Series(s_data, name=name, dtype=dtype)
+        msg = "Constructing a Categorical with a dtype and values containing"
+        with tm.assert_produces_warning(Pandas4Warning, match=msg):
+            result = ser.astype(dtype)
+        with tm.assert_produces_warning(Pandas4Warning, match=msg):
+            expected = Series(s_data, name=name, dtype=dtype)
         tm.assert_series_equal(result, expected)
 
         if dtype_ordered is False:

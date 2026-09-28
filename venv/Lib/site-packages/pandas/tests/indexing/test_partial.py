@@ -273,7 +273,7 @@ class TestPartialSetting:
             s.iat[3] = 5.0
 
     @pytest.mark.filterwarnings("ignore:Setting a value on a view:FutureWarning")
-    def test_partial_setting_frame(self, using_array_manager):
+    def test_partial_setting_frame(self):
         df_orig = DataFrame(
             np.arange(6).reshape(3, 2), columns=["A", "B"], dtype="int64"
         )
@@ -286,8 +286,6 @@ class TestPartialSetting:
             df.iloc[4, 2] = 5.0
 
         msg = "index 2 is out of bounds for axis 0 with size 2"
-        if using_array_manager:
-            msg = "list index out of range"
         with pytest.raises(IndexError, match=msg):
             df.iat[4, 2] = 5.0
 
@@ -538,7 +536,7 @@ class TestPartialSetting:
         df = orig.copy()
 
         df.loc[key, :] = df.iloc[0]
-        ex_index = Index(list(orig.index) + [key], dtype=object, name=orig.index.name)
+        ex_index = Index([*list(orig.index), key], dtype=object, name=orig.index.name)
         ex_data = np.concatenate([orig.values, df.iloc[[0]].values], axis=0)
         expected = DataFrame(ex_data, index=ex_index, columns=orig.columns)
 
@@ -560,7 +558,7 @@ class TestPartialSetting:
         ser = Series(df.iloc[0], name="a")
         exp = pd.concat([orig, DataFrame(ser).T.infer_objects()])
         tm.assert_frame_equal(df, exp)
-        tm.assert_index_equal(df.index, Index(orig.index.tolist() + ["a"]))
+        tm.assert_index_equal(df.index, Index([*orig.index.tolist(), "a"]))
         assert df.index.dtype == "object"
 
     @pytest.mark.parametrize(
@@ -576,12 +574,12 @@ class TestPartialSetting:
                 ],
             ),
             (
-                date_range(start="2000", periods=20, freq="D"),
+                date_range(start="2000", periods=20, freq="D", unit="s"),
                 ["2000-01-04", "2000-01-08", "2000-01-12"],
                 [
-                    Timestamp("2000-01-04"),
-                    Timestamp("2000-01-08"),
-                    Timestamp("2000-01-12"),
+                    Timestamp("2000-01-04").as_unit("s"),
+                    Timestamp("2000-01-08").as_unit("s"),
+                    Timestamp("2000-01-12").as_unit("s"),
                 ],
             ),
             (

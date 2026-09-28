@@ -28,6 +28,7 @@ from ._stats_py import power_divergence, _untabulate
 from ._relative_risk import relative_risk
 from ._crosstab import crosstab
 from ._odds_ratio import odds_ratio
+from scipy._lib._array_api import xp_capabilities
 from scipy._lib._bunch import _make_tuple_bunch
 from scipy import stats
 
@@ -36,6 +37,7 @@ __all__ = ['margins', 'expected_freq', 'chi2_contingency', 'crosstab',
            'association', 'relative_risk', 'odds_ratio']
 
 
+@xp_capabilities(np_only=True)
 def margins(a):
     """Return a list of the marginal sums of the array `a`.
 
@@ -88,6 +90,7 @@ def margins(a):
     return margsums
 
 
+@xp_capabilities(np_only=True)
 def expected_freq(observed):
     """
     Compute the expected frequencies from a contingency table.
@@ -142,6 +145,7 @@ Chi2ContingencyResult = _make_tuple_bunch(
 )
 
 
+@xp_capabilities(np_only=True)
 def chi2_contingency(observed, correction=True, lambda_=None, *, method=None):
     """Chi-square test of independence of variables in a contingency table.
 
@@ -172,14 +176,14 @@ def chi2_contingency(observed, correction=True, lambda_=None, *, method=None):
         `scipy.stats.power_divergence` for details.
     method : ResamplingMethod, optional
         Defines the method used to compute the p-value. Compatible only with
-        `correction=False`,  default `lambda_`, and two-way tables.
-        If `method` is an instance of `PermutationMethod`/`MonteCarloMethod`,
-        the p-value is computed using
+        ``correction=False``,  default `lambda_`, and two-way tables.
+        If `method` is an instance of `scipy.stats.PermutationMethod` or
+        `scipy.stats.MonteCarloMethod`, the p-value is computed using
         `scipy.stats.permutation_test`/`scipy.stats.monte_carlo_test` with the
         provided configuration options and other appropriate settings.
         Otherwise, the p-value is computed as documented in the notes.
-        Note that if `method` is an instance of `MonteCarloMethod`, the ``rvs``
-        attribute must be left unspecified; Monte Carlo samples are always drawn
+        Note that if `method` is an instance of `scipy.stats.MonteCarloMethod`, the
+        ``rvs`` attribute must be left unspecified; Monte Carlo samples are always drawn
         using the ``rvs`` method of `scipy.stats.random_table`.
 
         .. versionadded:: 1.15.0
@@ -418,6 +422,7 @@ def _chi2_monte_carlo_method(observed, expected, method):
                                   alternative='greater', **method)
 
 
+@xp_capabilities(np_only=True)
 def association(observed, method="cramer", correction=False, lambda_=None):
     """Calculates degree of association between two nominal variables.
 
