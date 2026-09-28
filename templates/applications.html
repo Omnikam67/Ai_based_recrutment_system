@@ -1,31 +1,41 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="heading">
-  <h1>Applications</h1>
-</div>
+<section class="page-header"><div><p class="eyebrow">HIRING PIPELINE</p><h1>Applications</h1><p>Monitor each candidate's progress through the process.</p></div></section>
 
 <div class="panel">
+  <div class="panel-header"><h2>All applications</h2><input class="table-search" type="search" placeholder="Search applications" data-table-filter="applications-table" aria-label="Search applications"></div>
   <table>
     <thead>
       <tr>
         <th>ID</th>
         <th>Candidate</th>
         <th>Job</th>
+        <th>Skill match</th>
         <th>Status</th>
         <th>Date</th>
+        <th>Decision</th>
       </tr>
     </thead>
-    <tbody>
+    <tbody data-filter-table="applications-table">
       {% for app in applications %}
       <tr>
         <td>{{ app.application_id }}</td>
         <td>{{ app.candidate_name }}</td>
         <td>{{ app.job_title }}</td>
-        <td><span class="status-badge">{{ app.status }}</span></td>
+        <td><strong>{{ app.skill_score if app.skill_score is not none else 'N/A' }}{% if app.skill_score is not none %}%{% endif %}</strong></td>
+        <td><span class="status-badge {{ app.status|lower }}">{{ app.status }}</span></td>
         <td>{{ app.application_date.strftime('%Y-%m-%d %H:%M') if app.application_date else 'N/A' }}</td>
+        <td>
+          <form method="post" action="{{ url_for('update_application_status', application_id=app.application_id) }}" class="row-actions">
+            <select name="status" aria-label="Status for {{ app.candidate_name }}">
+              {% for status in ['Applied', 'Shortlisted', 'Interview', 'Selected', 'Rejected'] %}<option value="{{ status }}" {% if app.status == status %}selected{% endif %}>{{ status }}</option>{% endfor %}
+            </select>
+            <button class="btn small" type="submit">Update</button>
+          </form>
+        </td>
       </tr>
       {% else %}
-      <tr><td colspan="5" class="empty-state">No applications submitted yet.</td></tr>
+      <tr><td colspan="7" class="empty-state">No applications submitted yet.</td></tr>
       {% endfor %}
     </tbody>
   </table>

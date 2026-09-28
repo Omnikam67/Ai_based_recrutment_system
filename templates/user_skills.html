@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-header"><div><p class="eyebrow">CANDIDATE PROFILE</p><h1>My skills</h1><p>Skills currently recorded on your recruitment profile.</p></div></section>
+<section class="panel">
+  <div class="panel-header"><h2>Add a skill</h2></div>
+  {% if available_skills %}
+  <form method="post" action="{{ url_for('user_skills') }}" class="filter-form">
+    <label>Skill
+      <select name="skill_id" required>
+        <option value="">Choose from available skills</option>
+        {% for skill in available_skills %}<option value="{{ skill.skill_id }}">{{ skill.skill_name }}{% if skill.category %} · {{ skill.category }}{% endif %}</option>{% endfor %}
+      </select>
+    </label>
+    <label>Proficiency
+      <select name="proficiency" required>
+        <option value="Beginner">Beginner</option>
+        <option value="Intermediate" selected>Intermediate</option>
+        <option value="Advanced">Advanced</option>
+        <option value="Expert">Expert</option>
+      </select>
+    </label>
+    <label>Years of experience
+      <input name="years_experience" type="number" min="0" step="0.1" value="0" required>
+    </label>
+    <button class="btn" type="submit">Add skill</button>
+  </form>
+  {% else %}
+  <p class="empty-state">There are no additional skills to add. Ask HR to add more skills to the catalog.</p>
+  {% endif %}
+</section>
+<section class="panel">
+  <div class="panel-header"><h2>Skills and proficiency</h2><span class="muted-copy">{{ skills|length }} skills</span></div>
+  <table>
+    <thead><tr><th>Skill</th><th>Proficiency</th><th>Years of experience</th><th>Action</th></tr></thead>
+    <tbody>
+      {% for skill in skills %}<tr><td><strong>{{ skill.skill_name }}</strong></td><td><span class="status-badge applied">{{ skill.proficiency }}</span></td><td>{{ skill.years_experience }} yrs</td><td><a class="btn secondary small" href="{{ url_for('edit_user_skill', skill_id=skill.skill_id) }}">Edit</a></td></tr>
+      {% else %}<tr><td colspan="4" class="empty-state">No skills are linked to this candidate profile yet.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

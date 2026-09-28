@@ -2,11 +2,12 @@
 {% block content %}
 <section class="page-header">
   <div>
-    <p class="eyebrow">Applications</p>
-    <h1>My Application Status</h1>
+    <p class="eyebrow">MY ACTIVITY</p>
+    <h1>My applications</h1>
+    <p>Track the latest status of each role you applied for.</p>
   </div>
   <div class="header-actions">
-    <a class="btn secondary" href="/user-dashboard">Back to Jobs</a>
+    <a class="btn" href="{{ url_for('candidate_jobs') }}">Browse jobs</a>
   </div>
 </section>
 
@@ -27,8 +28,8 @@
         <td>{{ app.job_title }}</td>
         <td>{{ app.company }}</td>
         <td>{{ app.location or '-' }}</td>
-        <td>{{ app.application_date }}</td>
-        <td>{{ app.status }}</td>
+        <td>{{ app.application_date.strftime('%b %d, %Y') if app.application_date else 'N/A' }}</td>
+        <td><span class="status-badge {{ app.status|lower }}">{{ app.status }}</span></td>
       </tr>
       {% else %}
       <tr>

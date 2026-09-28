@@ -1,19 +1,19 @@
 {% extends "base.html" %}
 {% block content %}
 <section class="form-panel">
-  <h1>Add Candidate</h1>
+  <div class="form-heading"><p class="eyebrow">TALENT POOL</p><h1>Add candidate</h1><p>Enter candidate details and skills for matching.</p></div>
   <form method="post" class="form">
     <label>
       <span>Full name</span>
-      <input name="name" placeholder="Full name" required>
+      <input name="name" placeholder="Full name" autocomplete="name" required>
     </label>
     <label>
       <span>Email</span>
-      <input name="email" type="email" placeholder="Email" required>
+      <input name="email" type="email" placeholder="name@example.com" autocomplete="email" required>
     </label>
     <label>
       <span>Phone</span>
-      <input name="phone" placeholder="Phone">
+      <input name="phone" type="tel" placeholder="Phone number" autocomplete="tel">
     </label>
     <label>
       <span>Education</span>
@@ -21,7 +21,7 @@
     </label>
     <label>
       <span>Experience (years)</span>
-      <input name="experience_years" type="number" step="0.1" min="0" placeholder="Experience (years)">
+      <input name="experience_years" type="number" step="0.1" min="0" value="0" placeholder="Experience (years)">
     </label>
     <label>
       <span>Location</span>
@@ -33,9 +33,9 @@
     </label>
     <label>
       <span>Resume / skills text</span>
-      <textarea name="resume_text" rows="8" placeholder="Paste resume text here..."></textarea>
+      <textarea name="resume_text" rows="8" placeholder="Paste resume text here to identify skills automatically..."></textarea>
     </label>
-    <button class="btn" type="submit">Save Candidate</button>
+    <div class="form-actions"><a class="btn secondary" href="{{ url_for('candidates') }}">Cancel</a><button class="btn" type="submit">Save candidate</button></div>
   </form>
 </section>
 {% endblock %}

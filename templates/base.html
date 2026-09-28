@@ -3,41 +3,55 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AI Talent Acquisition</title>
+  <title>{% block title %}SkillMatch AI{% endblock %}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body>
-<nav class="topbar">
-  <div class="brand-wrap">
-    <div class="brand">AI Talent Acquisition</div>
-    <small>Skill Gap Analytics</small>
-  </div>
-  <div class="nav-links">
-    {% if session.get('user_id') %}
-      {% if session.get('user_role') == 'HR' %}
-        <a href="/">Dashboard</a>
-        <a href="/candidates">Candidates</a>
-        <a href="/jobs">Jobs</a>
-        <a href="/applications">Applications</a>
-      {% else %}
-        <a href="/user-dashboard">My Jobs</a>
-        <a href="/my-applications">My Applications</a>
-      {% endif %}
-      <span class="user-badge">Hi, {{ session.get('user_name', 'User') }} ({{ session.get('user_role') }})</span>
-      <a href="/logout">Logout</a>
-    {% else %}
-      <a href="/login">Login</a>
-      <a href="/register">Register</a>
-    {% endif %}
-  </div>
-</nav>
-<main>
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% for category, message in messages %}
-      <div class="flash {{ category }}">{{ message }}</div>
-    {% endfor %}
-  {% endwith %}
-  {% block content %}{% endblock %}
-</main>
+<body class="{% if session.get('user_role') == 'HR' %}role-admin{% elif session.get('user_id') %}role-candidate{% else %}role-public{% endif %}">
+  {% if session.get('user_id') %}
+  <div class="app-shell">
+    {% include 'sidebar.html' %}
+    <div class="app-main">
+      <header class="topbar">
+        <button class="sidebar-toggle" type="button" aria-label="Toggle navigation" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
+        <div class="topbar-context">
+          <span class="topbar-kicker">{% if session.get('user_role') == 'HR' %}Recruitment workspace{% else %}Candidate workspace{% endif %}</span>
+          <strong>{{ session.get('user_name', 'Account') }}</strong>
+        </div>
+        <a class="topbar-account" href="{{ url_for('logout') }}">Sign out</a>
+      </header>
+  {% else %}
+  <div class="public-shell">
+  {% endif %}
+  <main class="{% if session.get('user_id') %}workspace{% else %}auth-main{% endif %}">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="flash {{ category }}" role="status">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+  {% if session.get('user_id') %}</div></div>{% else %}</div>{% endif %}
+  <script>
+    const shell = document.querySelector('.app-shell');
+    const toggle = document.querySelector('.sidebar-toggle');
+    if (shell && toggle) {
+      toggle.addEventListener('click', () => {
+        const open = shell.classList.toggle('sidebar-open');
+        toggle.setAttribute('aria-expanded', String(open));
+      });
+    }
+    document.querySelectorAll('[data-table-filter]').forEach((input) => {
+      input.addEventListener('input', () => {
+        const table = document.querySelector(`[data-filter-table="${input.dataset.tableFilter}"]`);
+        if (!table) return;
+        const query = input.value.trim().toLowerCase();
+        table.querySelectorAll('tr').forEach((row) => {
+          row.hidden = !row.textContent.toLowerCase().includes(query);
+        });
+      });
+    });
+  </script>
 </body>
 </html>

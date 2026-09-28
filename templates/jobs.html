@@ -1,39 +1,37 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="heading">
-  <h1>Jobs</h1>
-  <a class="btn" href="/jobs/add">+ Add Job</a>
-</div>
+<section class="page-header">
+  <div><p class="eyebrow">OPPORTUNITIES</p><h1>Jobs</h1><p>Manage open roles and review candidate matches.</p></div>
+  <a class="btn" href="{{ url_for('add_job') }}">Add job</a>
+</section>
 
 <div class="panel">
+  <div class="panel-header"><h2>All roles</h2><input class="table-search" type="search" placeholder="Search jobs" data-table-filter="jobs-table" aria-label="Search jobs"></div>
   <table>
     <thead>
-      <tr>
-        <th>ID</th>
-        <th>Job</th>
-        <th>Company</th>
-        <th>Min Experience</th>
-        <th>Status</th>
-        <th>Action</th>
-      </tr>
+      <tr><th>Job title</th><th>Company</th><th>Location</th><th>Experience</th><th>Required skills</th><th>Status</th><th>Actions</th></tr>
     </thead>
-    <tbody>
+    <tbody data-filter-table="jobs-table">
       {% for j in jobs %}
       <tr>
-        <td>{{ j.job_id }}</td>
-        <td>{{ j.job_title }}</td>
+        <td><strong>{{ j.job_title }}</strong></td>
         <td>{{ j.company }}</td>
+        <td>{{ j.location or 'Not specified' }}</td>
         <td>{{ j.min_experience }} yrs</td>
-        <td><span class="status-badge">{{ j.status }}</span></td>
+        <td>{{ j.required_skills or 'Not specified' }}</td>
+        <td><span class="status-badge {{ j.status|lower }}">{{ j.status }}</span></td>
         <td>
           <div class="row-actions">
-            <a class="btn small" href="/rank/{{ j.job_id }}">Ranking</a>
-            <a class="btn secondary small" href="/jobs/{{ j.job_id }}/apply">Apply</a>
+            <a class="btn small" href="{{ url_for('rank', job_id=j.job_id) }}">Ranking</a>
+            <a class="btn secondary small" href="{{ url_for('apply_to_job', job_id=j.job_id) }}">Apply</a>
+            <form method="post" action="{{ url_for('delete_job', job_id=j.job_id) }}" onsubmit="return confirm('Delete this job? Its applications, interviews, rankings, and skill-gap records will also be deleted. This cannot be undone.')">
+              <button class="btn danger small" type="submit">Delete</button>
+            </form>
           </div>
         </td>
       </tr>
       {% else %}
-      <tr><td colspan="6" class="empty-state">No jobs available yet.</td></tr>
+      <tr><td colspan="7" class="empty-state">No jobs available yet.</td></tr>
       {% endfor %}
     </tbody>
   </table>

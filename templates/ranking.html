@@ -2,35 +2,30 @@
 {% block content %}
 <section class="page-header compact">
   <div>
-    <p class="eyebrow">Ranking</p>
-    <h1>{{ job.job_title }} — {{ job.company }}</h1>
+    <p class="eyebrow">CANDIDATE RANKING</p>
+    <h1>{{ job.job_title }}</h1>
+    <p>{{ job.company }}{% if job.location %} · {{ job.location }}{% endif %}</p>
   </div>
+  <a class="btn secondary" href="{{ url_for('rankings') }}">All job rankings</a>
 </section>
 
 <div class="panel">
+  <div class="panel-header"><h2>Applicants ranked by fit</h2><span class="muted-copy">Highest overall match first</span></div>
   {% if results %}
   <table>
     <thead>
-      <tr>
-        <th>Rank</th>
-        <th>Candidate</th>
-        <th>Skill</th>
-        <th>Experience</th>
-        <th>NLP</th>
-        <th>Overall</th>
-        <th>Details</th>
-      </tr>
+      <tr><th>Rank</th><th>Candidate</th><th>Skill match</th><th>Matched skills</th><th>Missing skills</th><th>Overall score</th><th>Details</th></tr>
     </thead>
     <tbody>
       {% for r in results %}
       <tr>
-        <td>{{ loop.index }}</td>
-        <td>{{ r.candidate.name }}</td>
-        <td>{{ r.skill_score }}%</td>
-        <td>{{ r.experience_score }}%</td>
-        <td>{{ r.nlp_similarity }}%</td>
-        <td><b>{{ r.overall_score }}%</b></td>
-        <td><a class="btn small" href="/analyze/{{ r.candidate.candidate_id }}/{{ job.job_id }}">Analyze</a></td>
+        <td><span class="rank-number">{{ loop.index }}</span></td>
+        <td><strong>{{ r.candidate.name }}</strong><small class="table-subtext">{{ r.candidate.email }}</small></td>
+        <td><div class="match-cell"><strong>{{ r.skill_score }}%</strong><div class="progress-track"><div class="progress-fill" style="width: {{ r.skill_score }}%"></div></div></div></td>
+        <td>{% for skill in r.matched %}<span class="skill-chip">{{ skill.skill_name }}</span>{% else %}<span class="muted-copy">None</span>{% endfor %}</td>
+        <td>{% for skill in r.missing %}<span class="skill-chip missing">{{ skill.skill_name }}</span>{% else %}<span class="muted-copy">None</span>{% endfor %}</td>
+        <td><strong>{{ r.overall_score }}%</strong></td>
+        <td><a class="btn small" href="{{ url_for('analyze', candidate_id=r.candidate.candidate_id, job_id=job.job_id) }}">Analysis</a></td>
       </tr>
       {% endfor %}
     </tbody>

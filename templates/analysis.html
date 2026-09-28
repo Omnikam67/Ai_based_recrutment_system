@@ -1,58 +1,24 @@
 {% extends "base.html" %}
 {% block content %}
 <section class="analysis-header">
-  <p class="eyebrow">Candidate Review</p>
-  <h1>{{ result.candidate.name }} → {{ result.job.job_title }}</h1>
+  <p class="eyebrow">SKILL GAP ANALYSIS</p>
+  <h1>{{ result.candidate.name }} · {{ result.job.job_title }}</h1>
+  <p class="muted-copy">{{ result.job.company }}</p>
 </section>
 
-<div class="score-card">
-  <div class="score-value">{{ "%.2f"|format(result.overall_score) }}%</div>
-  <div class="score-caption">AI recommendation score</div>
-</div>
-
 <div class="metrics">
-  <div><span>Skill Match</span><b>{{ result.skill_score }}%</b></div>
+  <div><span>Overall score</span><b>{{ "%.2f"|format(result.overall_score) }}%</b></div>
+  <div><span>Skill match</span><b>{{ result.skill_score }}%</b></div>
   <div><span>Experience</span><b>{{ result.experience_score }}%</b></div>
   <div><span>Education</span><b>{{ result.education_score }}%</b></div>
-  <div><span>NLP Similarity</span><b>{{ result.nlp_similarity }}%</b></div>
+  <div><span>NLP similarity</span><b>{{ result.nlp_similarity }}%</b></div>
 </div>
 
-<div class="panel split-layout">
-  <div>
-    <h2>Matched Skills</h2>
-    <table>
-      <thead>
-        <tr><th>Skill</th><th>Required Level</th></tr>
-      </thead>
-      <tbody>
-        {% for x in result.matched %}
-        <tr><td>{{ x.skill_name }}</td><td>{{ x.required_level }}</td></tr>
-        {% else %}
-        <tr><td colspan="2" class="empty-state">No strong matches identified.</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-  <div>
-    <h2>Skill Gaps</h2>
-    <table>
-      <thead>
-        <tr><th>Missing Skill</th><th>Required</th></tr>
-      </thead>
-      <tbody>
-        {% for x in result.missing %}
-        <tr><td>{{ x.skill_name }}</td><td>{{ x.required_level }}</td></tr>
-        {% else %}
-        <tr><td colspan="2" class="empty-state">No major missing skills.</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</div>
+{% include '_skill_result.html' %}
 
-<div class="panel">
-  <h2>AI / ML Prediction</h2>
-  <p><strong>Prediction:</strong> {{ 'Selected' if result.ml_prediction.prediction == 1 else 'Not Selected' }}</p>
-  <p><strong>Selection Probability:</strong> {{ result.ml_prediction.probability }}%</p>
+<div class="panel prediction-panel">
+  <div><p class="eyebrow">MODEL SIGNAL</p><h2>AI / ML prediction</h2></div>
+  <div><span>Prediction</span><strong class="status-badge {{ 'selected' if result.ml_prediction.prediction == 1 else 'rejected' }}">{{ 'Selected' if result.ml_prediction.prediction == 1 else 'Not selected' }}</strong></div>
+  <div><span>Selection probability</span><strong>{{ result.ml_prediction.probability }}%</strong></div>
 </div>
 {% endblock %}

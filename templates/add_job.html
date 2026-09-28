@@ -1,15 +1,15 @@
 {% extends "base.html" %}
 {% block content %}
 <section class="form-panel">
-  <h1>Add Job</h1>
+  <div class="form-heading"><p class="eyebrow">OPEN ROLE</p><h1>Add job</h1><p>Describe the position and the skills required to match candidates.</p></div>
   <form method="post" class="form">
     <label>
       <span>Job title</span>
-      <input name="job_title" placeholder="Job title" required>
+      <input name="job_title" placeholder="e.g. Data Analyst" required>
     </label>
     <label>
       <span>Company</span>
-      <input name="company" placeholder="Company" required>
+      <input name="company" placeholder="Company name" required>
     </label>
     <label>
       <span>Location</span>
@@ -25,9 +25,9 @@
     </label>
     <label>
       <span>Required skills</span>
-      <input name="skills" placeholder="Required skills, comma separated" required>
+      <input name="skills" placeholder="Python, SQL, Power BI" required>
     </label>
-    <button class="btn" type="submit">Save Job</button>
+    <div class="form-actions"><a class="btn secondary" href="{{ url_for('jobs') }}">Cancel</a><button class="btn" type="submit">Save job</button></div>
   </form>
 </section>
 {% endblock %}

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-header"><div><p class="eyebrow">SKILLS DIRECTORY</p><h1>Skills</h1><p>Skills currently linked to candidates and job requirements.</p></div><a class="btn" href="#add-skill">Add skill</a></section>
+<section class="panel" id="add-skill">
+  <div class="panel-header"><h2>Add a skill</h2></div>
+  <form method="post" action="{{ url_for('skills') }}" class="filter-form">
+    <label>Skill name
+      <input type="text" name="skill_name" placeholder="e.g. Python" maxlength="100" required>
+    </label>
+    <label>Category
+      <input type="text" name="category" placeholder="Technical" maxlength="80" value="Technical">
+    </label>
+    <button class="btn" type="submit">Save skill</button>
+  </form>
+</section>
+<div class="panel">
+  <div class="panel-header"><h2>Available skills</h2><input class="table-search" type="search" placeholder="Search skills" data-table-filter="skills-table" aria-label="Search skills"></div>
+  <table>
+    <thead><tr><th>Skill</th><th>Category</th><th>Candidates</th><th>Jobs requiring skill</th><th>Action</th></tr></thead>
+    <tbody data-filter-table="skills-table">
+      {% for skill in skills %}<tr><td><strong>{{ skill.skill_name }}</strong></td><td>{{ skill.category or 'General' }}</td><td>{{ skill.candidate_count }}</td><td>{{ skill.job_count }}</td><td><a class="btn secondary small" href="{{ url_for('edit_skill', skill_id=skill.skill_id) }}">Edit</a></td></tr>
+      {% else %}<tr><td colspan="5" class="empty-state">No skills have been added yet. Skills are added with candidate and job profiles.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -2,44 +2,49 @@
 {% block content %}
 <section class="page-header">
   <div>
-    <p class="eyebrow">Candidate Portal</p>
-    <h1>Available Jobs</h1>
+    <p class="eyebrow">CANDIDATE OVERVIEW</p>
+    <h1>Welcome, {{ user.name if user else session.get('user_name', 'Candidate') }}</h1>
+    <p>Your profile and application activity at a glance.</p>
   </div>
   <div class="header-actions">
-    <a class="btn" href="/my-applications">My Applications</a>
+    <a class="btn" href="{{ url_for('candidate_jobs') }}">Browse open jobs</a>
   </div>
 </section>
 
-<div class="panel">
+<section class="profile-summary panel">
+  <div class="profile-avatar">{{ (user.name if user else session.get('user_name', 'C'))[:1]|upper }}</div>
+  <div class="profile-main">
+    <p class="eyebrow">MY PROFILE</p>
+    <h2>{{ user.name if user else session.get('user_name', 'Candidate') }}</h2>
+    <p>{{ user.email if user else 'Email not available' }}</p>
+  </div>
+  <div class="profile-details">
+    <div><span>Education</span><strong>{{ candidate.education if candidate and candidate.education else 'Not added' }}</strong></div>
+    <div><span>Experience</span><strong>{{ candidate.experience_years if candidate else 0 }} years</strong></div>
+  </div>
+  <a class="btn secondary" href="{{ url_for('user_profile') }}">View profile</a>
+</section>
+
+<div class="cards candidate-stats">
+  <div class="stat-card"><span class="stat-label">My skills</span><b>{{ skills }}</b></div>
+  <div class="stat-card"><span class="stat-label">Applications</span><b>{{ applications_count }}</b></div>
+  <div class="stat-card"><span class="stat-label">Shortlisted</span><b>{{ shortlisted }}</b></div>
+  <div class="stat-card"><span class="stat-label">Selected</span><b>{{ selected }}</b></div>
+</div>
+
+<section class="panel">
+  <div class="panel-header"><h2>Recent applications</h2><a href="{{ url_for('my_applications') }}">View all</a></div>
   <table>
-    <thead>
-      <tr>
-        <th>Job Title</th>
-        <th>Company</th>
-        <th>Location</th>
-        <th>Min Experience</th>
-        <th>Apply</th>
-      </tr>
-    </thead>
+    <thead><tr><th>Job</th><th>Company</th><th>Date</th><th>Status</th></tr></thead>
     <tbody>
-      {% for job in jobs %}
+      {% for item in recent_applications %}
       <tr>
-        <td>{{ job.job_title }}</td>
-        <td>{{ job.company }}</td>
-        <td>{{ job.location or '-' }}</td>
-        <td>{{ job.min_experience }} years</td>
-        <td>
-          <form method="post" action="{{ url_for('user_apply', job_id=job.job_id) }}">
-            <button class="btn small" type="submit">Apply</button>
-          </form>
-        </td>
+        <td><strong>{{ item.job_title }}</strong></td><td>{{ item.company }}</td>
+        <td>{{ item.application_date.strftime('%b %d, %Y') if item.application_date else 'N/A' }}</td>
+        <td><span class="status-badge {{ item.status|lower }}">{{ item.status }}</span></td>
       </tr>
-      {% else %}
-      <tr>
-        <td colspan="5" class="empty-state">No open jobs right now.</td>
-      </tr>
-      {% endfor %}
+      {% else %}<tr><td colspan="4" class="empty-state">Your applications will appear here.</td></tr>{% endfor %}
     </tbody>
   </table>
-</div>
+</section>
 {% endblock %}

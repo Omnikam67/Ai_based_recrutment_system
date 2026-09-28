@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-header"><div><p class="eyebrow">OPEN OPPORTUNITIES</p><h1>Browse jobs</h1><p>Explore open roles and apply using your candidate account.</p></div><a class="btn secondary" href="{{ url_for('my_applications') }}">My applications</a></section>
+<div class="job-grid">
+  {% for job in jobs %}
+  <article class="job-card">
+    <div class="job-card-heading"><div><h2>{{ job.job_title }}</h2><p>{{ job.company }}</p></div><span class="status-badge open">{{ job.status }}</span></div>
+    <div class="job-meta"><span>{{ job.location or 'Location not specified' }}</span><span>{{ job.min_experience }}+ years experience</span></div>
+    <p class="job-description">{{ job.description or 'Role details are available from the hiring team.' }}</p>
+    <div class="job-skills"><span class="field-caption">Required skills</span><div>{% for skill in (job.required_skills or '').split(', ') if skill %}<span class="skill-chip">{{ skill }}</span>{% else %}<span class="muted-copy">Not listed</span>{% endfor %}</div></div>
+    <details class="job-details"><summary>View details</summary><p>{{ job.description or 'No additional job description provided.' }}</p></details>
+    <div class="job-actions"><form method="post" action="{{ url_for('user_apply', job_id=job.job_id) }}"><button class="btn apply-button" type="submit">Apply now</button></form></div>
+  </article>
+  {% else %}<div class="panel empty-state">No open jobs right now.</div>{% endfor %}
+</div>
+{% endblock %}

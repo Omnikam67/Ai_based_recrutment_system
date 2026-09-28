@@ -1,0 +1,31 @@
+<section class="panel skill-analysis-panel">
+  <div class="skill-overview">
+    <div><p class="eyebrow">SKILL FIT</p><h2>Skill match</h2><p class="muted-copy">Based on the job's required skills.</p></div>
+    <strong class="skill-score">{{ result.skill_score }}%</strong>
+    <div class="progress-track progress-large"><div class="progress-fill" style="width: {{ result.skill_score }}%"></div></div>
+  </div>
+  <div class="skill-columns">
+    <section class="skill-list-card">
+      <h3>Matched skills <span>{{ result.matched|length }}</span></h3>
+      <div class="skill-chip-list">
+        {% for skill in result.matched %}<span class="skill-chip">{{ skill.skill_name }}<small>Profile: {{ skill.candidate_level or 'Not recorded' }} · Needs: {{ skill.required_level }}</small></span>
+        {% else %}<p class="empty-state">No required skills matched yet.</p>{% endfor %}
+      </div>
+    </section>
+    {% if result.level_gaps %}
+    <section class="skill-list-card">
+      <h3>Below required proficiency <span>{{ result.level_gaps|length }}</span></h3>
+      <div class="skill-chip-list">
+        {% for skill in result.level_gaps %}<span class="skill-chip missing">{{ skill.skill_name }}<small>{{ skill.candidate_level }} · Required {{ skill.required_level }}</small></span>{% endfor %}
+      </div>
+    </section>
+    {% endif %}
+    <section class="skill-list-card">
+      <h3>Skills to develop <span>{{ result.missing|length }}</span></h3>
+      <div class="skill-chip-list">
+        {% for skill in result.missing %}<span class="skill-chip missing">{{ skill.skill_name }}<small>{{ skill.required_level }}</small></span>
+        {% else %}<p class="empty-state">No missing required skills.</p>{% endfor %}
+      </div>
+    </section>
+  </div>
+</section>

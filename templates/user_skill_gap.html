@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-header"><div><p class="eyebrow">CAREER DEVELOPMENT</p><h1>Skill gap analysis</h1><p>Compare your recorded skills with an open role.</p></div></section>
+<section class="panel selection-panel">
+  <form method="get" action="{{ url_for('user_skill_gap') }}" class="filter-form">
+    <label>Choose a position
+      <select name="job_id" required>
+        <option value="">Select an open job</option>
+        {% for job in jobs %}<option value="{{ job.job_id }}" {% if selected_job_id == job.job_id %}selected{% endif %}>{{ job.job_title }} · {{ job.company }}</option>{% endfor %}
+      </select>
+    </label>
+    <button class="btn" type="submit">Compare skills</button>
+  </form>
+</section>
+{% if result %}
+  {% if result.error %}<div class="panel empty-state">{{ result.error }}</div>
+  {% else %}
+  <section class="analysis-header"><p class="eyebrow">{{ result.candidate.name }} · {{ result.job.job_title }}</p><h2>Role readiness</h2></section>
+  {% include '_skill_result.html' %}
+  {% endif %}
+{% endif %}
+{% endblock %}

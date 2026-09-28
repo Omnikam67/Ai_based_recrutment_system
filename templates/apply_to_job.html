@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 <section class="form-panel">
-  <h1>Apply Candidate to {{ job.job_title }}</h1>
+  <div class="form-heading"><p class="eyebrow">APPLICATION</p><h1>Apply candidate</h1><p>{{ job.job_title }} · {{ job.company }}</p></div>
   <form method="post" class="form">
     <label>
       <span>Select candidate</span>
@@ -12,7 +12,7 @@
         {% endfor %}
       </select>
     </label>
-    <button class="btn" type="submit">Submit Application</button>
+    <div class="form-actions"><a class="btn secondary" href="{{ url_for('jobs') }}">Cancel</a><button class="btn" type="submit">Submit application</button></div>
   </form>
 </section>
 {% endblock %}

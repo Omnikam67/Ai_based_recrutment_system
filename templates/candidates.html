@@ -1,11 +1,12 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="heading">
-  <h1>Candidates</h1>
-  <a class="btn" href="/candidates/add">+ Add Candidate</a>
-</div>
+<section class="page-header">
+  <div><p class="eyebrow">TALENT POOL</p><h1>Candidates</h1><p>Review candidate profiles and experience.</p></div>
+  <a class="btn" href="{{ url_for('add_candidate') }}">Add candidate</a>
+</section>
 
 <div class="panel">
+  <div class="panel-header"><h2>Candidate directory</h2><input class="table-search" type="search" placeholder="Search candidates" data-table-filter="candidates-table" aria-label="Search candidates"></div>
   <table>
     <thead>
       <tr>
@@ -17,7 +18,7 @@
         <th>Location</th>
       </tr>
     </thead>
-    <tbody>
+    <tbody data-filter-table="candidates-table">
       {% for c in candidates %}
       <tr>
         <td>{{ c.candidate_id }}</td>

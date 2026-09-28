@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="form-panel">
+  <div class="form-heading"><p class="eyebrow">SKILLS DIRECTORY</p><h1>Edit skill</h1><p>Changes to the skill name apply anywhere it is used.</p></div>
+  <form method="post" class="form">
+    <label><span>Skill name</span><input name="skill_name" value="{{ skill.skill_name }}" required></label>
+    <label><span>Category</span><input name="category" value="{{ skill.category or '' }}" placeholder="Technical"></label>
+    <div class="form-actions"><a class="btn secondary" href="{{ url_for('skills') }}">Cancel</a><button class="btn" type="submit">Save changes</button></div>
+  </form>
+</section>
+{% endblock %}

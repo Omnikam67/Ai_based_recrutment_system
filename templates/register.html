@@ -2,39 +2,38 @@
 {% block content %}
 <div class="auth-shell">
   <div class="login-panel">
-    <h1>Create Account</h1>
-    <p>Register as HR or candidate.</p>
+    <div class="auth-brand"><span class="brand-symbol">S</span><span><strong>SkillMatch AI</strong><small>AI-Based Talent Acquisition<br>&amp; Skill Gap Analytics</small></span></div>
+    <h1>Create your account</h1>
+    <p>Set up access to the SkillMatch workspace.</p>
 
     <form class="form" method="post">
       <label>
         Full Name
-        <input type="text" name="name" placeholder="Enter full name" required>
+        <input type="text" name="name" placeholder="Full name" autocomplete="name" required>
       </label>
 
       <label>
         Role
         <select name="role" required>
-          <option value="HR">HR</option>
+          <option value="HR">Administrator</option>
           <option value="User">Candidate</option>
         </select>
       </label>
 
       <label>
         Email
-        <input type="email" name="email" placeholder="Enter email" required>
+        <input type="email" name="email" placeholder="you@example.com" autocomplete="email" required>
       </label>
 
       <label>
         Password
-        <input type="password" name="password" placeholder="Enter password" required>
+        <input type="password" name="password" placeholder="Create a password" autocomplete="new-password" required>
       </label>
 
-      <button class="btn" type="submit">Register</button>
+      <button class="btn" type="submit">Create account</button>
     </form>
 
-    <p style="margin-top: 16px; font-size: 0.9rem; color: #475569;">
-      Already have an account? <a href="/login">Login here</a>
-    </p>
+    <p class="auth-footnote">Already registered? <a href="{{ url_for('login') }}">Sign in</a></p>
   </div>
 </div>
 {% endblock %}

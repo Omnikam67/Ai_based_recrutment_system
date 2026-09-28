@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-header"><div><p class="eyebrow">CANDIDATE ACCOUNT</p><h1>My profile</h1><p>Your account details and recruitment profile.</p></div></section>
+<section class="profile-summary panel">
+  <div class="profile-avatar">{{ (profile.name if profile else session.get('user_name', 'C'))[:1]|upper }}</div>
+  <div class="profile-main"><p class="eyebrow">ACCOUNT</p><h2>{{ profile.name if profile else session.get('user_name', 'Candidate') }}</h2><p>{{ profile.email if profile else 'Email not available' }}</p></div>
+  <div class="profile-details">
+    <div><span>Education</span><strong>{{ profile.education if profile and profile.education else 'Not added' }}</strong></div>
+    <div><span>Experience</span><strong>{{ profile.experience_years if profile and profile.experience_years is not none else 'Not added' }}{% if profile and profile.experience_years is not none %} years{% endif %}</strong></div>
+    <div><span>Location</span><strong>{{ profile.location if profile and profile.location else 'Not added' }}</strong></div>
+    <div><span>Phone</span><strong>{{ profile.phone if profile and profile.phone else 'Not added' }}</strong></div>
+  </div>
+</section>
+{% if not profile or not profile.education %}<p class="notice-note">Some profile details are not available yet. Candidate profile information is stored separately from account registration.</p>{% endif %}
+<section class="panel">
+  <div class="panel-header"><h2>Add a skill</h2></div>
+  {% if available_skills %}
+  <form method="post" action="{{ url_for('user_skills') }}" class="filter-form">
+    <input type="hidden" name="return_to" value="profile">
+    <label>Skill
+      <select name="skill_id" required>
+        <option value="">Choose a skill</option>
+        {% for skill in available_skills %}<option value="{{ skill.skill_id }}">{{ skill.skill_name }}{% if skill.category %} · {{ skill.category }}{% endif %}</option>{% endfor %}
+      </select>
+    </label>
+    <label>Proficiency
+      <select name="proficiency" required>
+        <option value="Beginner">Beginner</option>
+        <option value="Intermediate" selected>Intermediate</option>
+        <option value="Advanced">Advanced</option>
+        <option value="Expert">Expert</option>
+      </select>
+    </label>
+    <label>Years of experience
+      <input name="years_experience" type="number" min="0" step="0.1" value="0" required>
+    </label>
+    <button class="btn" type="submit">Add skill</button>
+  </form>
+  {% else %}
+  <p class="empty-state">There are no additional skills to add. Ask HR to add more skills to the catalog.</p>
+  {% endif %}
+</section>
+<section class="panel">
+  <div class="panel-header"><h2>My skills</h2><span class="muted-copy">{{ skills|length }} skills</span></div>
+  <table>
+    <thead><tr><th>Skill</th><th>Proficiency</th><th>Experience</th><th>Action</th></tr></thead>
+    <tbody>
+      {% for skill in skills %}<tr><td><strong>{{ skill.skill_name }}</strong></td><td><span class="status-badge applied">{{ skill.proficiency }}</span></td><td>{{ skill.years_experience }} yrs</td><td><a class="btn secondary small" href="{{ url_for('edit_user_skill', skill_id=skill.skill_id) }}">Edit</a></td></tr>
+      {% else %}<tr><td colspan="4" class="empty-state">No skills are linked to your profile yet.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</section>
+<section class="panel profile-danger-zone">
+  <div>
+    <h2>Delete candidate profile</h2>
+    <p>This removes your profile details and skills. Your login, name, email, applications, and interview history will remain.</p>
+  </div>
+  <form method="post" action="{{ url_for('delete_user_profile') }}" onsubmit="return confirm('Delete your profile details and skills? Your account and applications will remain.');">
+    <button class="btn danger" type="submit">Delete my profile</button>
+  </form>
+</section>
+{% endblock %}

@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-header"><div><p class="eyebrow">HIRING PIPELINE</p><h1>Interviews</h1><p>Review interview schedules and feedback status.</p></div></section>
+<section class="panel">
+  <div class="panel-header"><h2>Schedule an interview</h2></div>
+  {% if applications %}
+  <form method="post" action="{{ url_for('interviews') }}" class="filter-form interview-schedule-form">
+    <label>Application
+      <select name="application_id" required>
+        <option value="">Choose a candidate and role</option>
+        {% for application in applications %}<option value="{{ application.application_id }}">{{ application.candidate_name }} · {{ application.job_title }} ({{ application.status }})</option>{% endfor %}
+      </select>
+    </label>
+    <label>Date and time
+      <input name="interview_date" type="datetime-local" required>
+    </label>
+    <label>Interviewer
+      <input name="interviewer" type="text" maxlength="100" placeholder="Interviewer name" required>
+    </label>
+    <button class="btn" type="submit">Schedule</button>
+  </form>
+  {% else %}
+  <p class="empty-state">There are no active applications to schedule. Applications marked Selected or Rejected are excluded.</p>
+  {% endif %}
+</section>
+<div class="panel">
+  <div class="panel-header"><h2>Interview schedule</h2><input class="table-search" type="search" placeholder="Search interviews" data-table-filter="interviews-table" aria-label="Search interviews"></div>
+  <div class="table-scroll">
+  <table class="interviews-table">
+    <thead><tr><th>Candidate</th><th>Position</th><th>Date</th><th>Interviewer</th><th>Status and feedback</th></tr></thead>
+    <tbody data-filter-table="interviews-table">
+      {% for interview in interviews %}
+      <tr>
+        <td><strong>{{ interview.candidate_name }}</strong></td>
+        <td>{{ interview.job_title }}</td>
+        <td>{{ interview.interview_date.strftime('%b %d, %Y · %I:%M %p') if interview.interview_date else 'Not scheduled' }}</td>
+        <td>{{ interview.interviewer or 'Not assigned' }}</td>
+        <td>
+          <form method="post" action="{{ url_for('update_interview', interview_id=interview.interview_id) }}" class="interview-update-form">
+            <label class="sr-only" for="interview-status-{{ interview.interview_id }}">Interview status</label>
+            <select id="interview-status-{{ interview.interview_id }}" name="status">
+              {% for status in ['Scheduled', 'Completed', 'Passed', 'Rejected', 'Next Round', 'Cancelled'] %}<option value="{{ status }}" {% if interview.status == status %}selected{% endif %}>{{ status }}</option>{% endfor %}
+            </select>
+            <label class="sr-only" for="interview-feedback-{{ interview.interview_id }}">Interview feedback</label>
+            <textarea id="interview-feedback-{{ interview.interview_id }}" name="feedback" rows="2" placeholder="Add interview feedback">{{ interview.feedback or '' }}</textarea>
+            <button class="btn small" type="submit">Save</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}<tr><td colspan="5" class="empty-state">No interviews are scheduled yet.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+  </div>
+</div>
+{% endblock %}

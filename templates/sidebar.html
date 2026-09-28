@@ -1,0 +1,34 @@
+<aside class="sidebar" aria-label="Main navigation">
+  <a class="brand-lockup" href="{% if session.get('user_role') == 'HR' %}{{ url_for('dashboard') }}{% else %}{{ url_for('user_dashboard') }}{% endif %}">
+    <span class="brand-symbol">S</span>
+    <span class="brand-copy"><strong>SkillMatch</strong><small>Talent Intelligence</small></span>
+  </a>
+  {% if session.get('user_role') == 'HR' %}
+  <p class="sidebar-label">ADMIN PANEL</p>
+  <nav class="side-nav">
+    <a class="side-link {% if request.endpoint == 'dashboard' %}active{% endif %}" href="{{ url_for('dashboard') }}"><span class="nav-mark">01</span>Dashboard</a>
+    <a class="side-link {% if request.endpoint == 'candidates' or request.endpoint == 'add_candidate' %}active{% endif %}" href="{{ url_for('candidates') }}"><span class="nav-mark">02</span>Candidates</a>
+    <a class="side-link {% if request.endpoint == 'jobs' or request.endpoint == 'add_job' %}active{% endif %}" href="{{ url_for('jobs') }}"><span class="nav-mark">03</span>Jobs</a>
+    <a class="side-link {% if request.endpoint == 'skills' %}active{% endif %}" href="{{ url_for('skills') }}"><span class="nav-mark">04</span>Skills</a>
+    <a class="side-link {% if request.endpoint == 'applications' %}active{% endif %}" href="{{ url_for('applications') }}"><span class="nav-mark">05</span>Applications</a>
+    <a class="side-link {% if request.endpoint == 'rankings' or request.endpoint == 'rank' %}active{% endif %}" href="{{ url_for('rankings') }}"><span class="nav-mark">06</span>Candidate Ranking</a>
+    <a class="side-link {% if request.endpoint == 'hr_skill_gap' or request.endpoint == 'analyze' %}active{% endif %}" href="{{ url_for('hr_skill_gap') }}"><span class="nav-mark">07</span>Skill Gap Analysis</a>
+    <a class="side-link {% if request.endpoint == 'interviews' %}active{% endif %}" href="{{ url_for('interviews') }}"><span class="nav-mark">08</span>Interviews</a>
+  </nav>
+  {% else %}
+  <p class="sidebar-label">CANDIDATE PANEL</p>
+  <nav class="side-nav">
+    <a class="side-link {% if request.endpoint == 'user_dashboard' %}active{% endif %}" href="{{ url_for('user_dashboard') }}"><span class="nav-mark">01</span>Dashboard</a>
+    <a class="side-link {% if request.endpoint == 'user_profile' %}active{% endif %}" href="{{ url_for('user_profile') }}"><span class="nav-mark">02</span>My Profile</a>
+    <a class="side-link {% if request.endpoint == 'user_skills' %}active{% endif %}" href="{{ url_for('user_skills') }}"><span class="nav-mark">03</span>My Skills</a>
+    <a class="side-link {% if request.endpoint == 'candidate_jobs' %}active{% endif %}" href="{{ url_for('candidate_jobs') }}"><span class="nav-mark">04</span>Browse Jobs</a>
+    <a class="side-link {% if request.endpoint == 'my_applications' %}active{% endif %}" href="{{ url_for('my_applications') }}"><span class="nav-mark">05</span>My Applications</a>
+    <a class="side-link {% if request.endpoint == 'user_skill_gap' %}active{% endif %}" href="{{ url_for('user_skill_gap') }}"><span class="nav-mark">06</span>Skill Gap Analysis</a>
+  </nav>
+  {% endif %}
+  <div class="sidebar-bottom">
+    <span class="account-avatar">{{ session.get('user_name', 'U')[:1]|upper }}</span>
+    <span class="account-copy"><strong>{{ session.get('user_name', 'User') }}</strong><small>{{ session.get('user_role') }}</small></span>
+    <a class="logout-link" href="{{ url_for('logout') }}" aria-label="Log out" title="Log out">↗</a>
+  </div>
+</aside>

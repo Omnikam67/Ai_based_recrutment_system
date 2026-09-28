@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="form-panel">
+  <div class="form-heading"><p class="eyebrow">MY SKILLS</p><h1>Edit {{ skill.skill_name }}</h1><p>Update your proficiency and experience for this skill.</p></div>
+  <form method="post" class="form">
+    <label><span>Proficiency</span>
+      <select name="proficiency" required>
+        {% for level in ['Beginner', 'Intermediate', 'Advanced', 'Expert'] %}<option value="{{ level }}" {% if skill.proficiency == level %}selected{% endif %}>{{ level }}</option>{% endfor %}
+      </select>
+    </label>
+    <label><span>Years of experience</span><input type="number" name="years_experience" min="0" step="0.1" value="{{ skill.years_experience }}" required></label>
+    <div class="form-actions"><a class="btn secondary" href="{{ url_for('user_skills') }}">Cancel</a><button class="btn" type="submit">Save changes</button></div>
+  </form>
+</section>
+{% endblock %}

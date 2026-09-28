@@ -2,49 +2,92 @@
 {% block content %}
 <section class="page-header">
   <div>
-    <p class="eyebrow">HR Intelligence</p>
-    <h1>Recruitment Dashboard</h1>
+    <p class="eyebrow">ADMIN OVERVIEW</p>
+    <h1>Recruitment dashboard</h1>
+    <p>Track candidates, open roles, and hiring progress.</p>
   </div>
   <div class="header-actions">
-    <a class="btn" href="/candidates/add">+ Add Candidate</a>
-    <a class="btn secondary" href="/jobs/add">+ Add Job</a>
+    <a class="btn" href="{{ url_for('add_candidate') }}">Add candidate</a>
+    <a class="btn secondary" href="{{ url_for('add_job') }}">Add job</a>
   </div>
 </section>
 
 <div class="cards">
-  <div class="stat-card">
-    <span class="stat-label">Total Candidates</span>
-    <b>{{ candidates }}</b>
-  </div>
-  <div class="stat-card">
-    <span class="stat-label">Open Jobs</span>
-    <b>{{ jobs }}</b>
-  </div>
-  <div class="stat-card">
-    <span class="stat-label">Applications</span>
-    <b>{{ applications }}</b>
-  </div>
-  <div class="stat-card">
-    <span class="stat-label">Shortlisted</span>
-    <b>{{ shortlisted }}</b>
-  </div>
+  <div class="stat-card"><span class="stat-label">Total candidates</span><b>{{ candidates }}</b></div>
+  <div class="stat-card"><span class="stat-label">Total jobs</span><b>{{ jobs }}</b></div>
+  <div class="stat-card"><span class="stat-label">Applications</span><b>{{ applications }}</b></div>
+  <div class="stat-card"><span class="stat-label">Shortlisted</span><b>{{ shortlisted }}</b></div>
+  <div class="stat-card"><span class="stat-label">Selected</span><b>{{ selected }}</b></div>
+  <div class="stat-card"><span class="stat-label">Available skills</span><b>{{ skills }}</b></div>
 </div>
 
-<div class="panel">
-  <div class="panel-header">
-    <h2>Top Candidate Matches</h2>
-  </div>
+<div class="dashboard-columns">
+  <section class="panel dashboard-panel">
+    <div class="panel-header"><h2>Recent applications</h2><a href="{{ url_for('applications') }}">View all</a></div>
+    <table>
+      <thead><tr><th>Candidate</th><th>Position</th><th>Status</th><th>Date</th></tr></thead>
+      <tbody>
+        {% for item in recent_applications %}
+        <tr>
+          <td>{{ item.candidate_name }}</td><td>{{ item.job_title }}</td>
+          <td><span class="status-badge {{ item.status|lower }}">{{ item.status }}</span></td>
+          <td>{{ item.application_date.strftime('%b %d, %Y') if item.application_date else 'N/A' }}</td>
+        </tr>
+        {% else %}<tr><td colspan="4" class="empty-state">No applications yet.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </section>
+  <section class="panel dashboard-panel">
+    <div class="panel-header"><h2>Recent candidates</h2><a href="{{ url_for('candidates') }}">View all</a></div>
+    <table>
+      <thead><tr><th>Candidate</th><th>Education</th><th>Experience</th></tr></thead>
+      <tbody>
+        {% for candidate in recent_candidates %}
+        <tr><td><strong>{{ candidate.name }}</strong><small class="table-subtext">{{ candidate.email }}</small></td><td>{{ candidate.education or 'Not provided' }}</td><td>{{ candidate.experience_years }} yrs</td></tr>
+        {% else %}<tr><td colspan="3" class="empty-state">No candidates added yet.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </section>
+</div>
+
+<div class="dashboard-columns dashboard-columns-lower">
+  <section class="panel dashboard-panel">
+    <div class="panel-header"><h2>Job statistics</h2><a href="{{ url_for('jobs') }}">Manage jobs</a></div>
+    {% for item in job_statistics %}
+    <div class="summary-row"><span><span class="status-badge {{ item.status|lower }}">{{ item.status }}</span></span><strong>{{ item.total }}</strong></div>
+    {% else %}<p class="empty-state">No jobs have been posted.</p>{% endfor %}
+  </section>
+  <section class="panel dashboard-panel">
+    <div class="panel-header"><h2>Application status</h2><a href="{{ url_for('applications') }}">All applications</a></div>
+    {% for item in application_status %}
+    <div class="summary-row"><span><span class="status-badge {{ item.status|lower }}">{{ item.status }}</span></span><strong>{{ item.total }}</strong></div>
+    {% else %}<p class="empty-state">No application activity yet.</p>{% endfor %}
+  </section>
+</div>
+
+<section class="panel">
+  <div class="panel-header"><h2>Recent candidate activity</h2><span class="muted-copy">Latest profile and selection updates</span></div>
   <table>
-    <thead>
-      <tr><th>Candidate</th><th>Job</th><th>AI Score</th></tr>
-    </thead>
+    <thead><tr><th>Candidate</th><th>Activity</th><th>Date</th></tr></thead>
     <tbody>
-      {% for r in top %}
-      <tr><td>{{ r.name }}</td><td>{{ r.job_title }}</td><td>{{ "%.2f"|format(r.overall_score) }}%</td></tr>
-      {% else %}
-      <tr><td colspan="3" class="empty-state">Run candidate analysis to generate rankings.</td></tr>
-      {% endfor %}
+      {% for item in recent_activity %}
+      <tr><td><strong>{{ item.candidate_name }}</strong></td><td>{{ item.activity }}</td><td>{{ item.activity_date.strftime('%b %d, %Y · %I:%M %p') if item.activity_date else 'N/A' }}</td></tr>
+      {% else %}<tr><td colspan="3" class="empty-state">Candidate profile changes will appear here.</td></tr>{% endfor %}
     </tbody>
   </table>
-</div>
+</section>
+
+<section class="panel">
+  <div class="panel-header"><h2>Top candidate matches</h2><a href="{{ url_for('rankings') }}">Explore rankings</a></div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Candidate</th><th>Job</th><th>Match score</th></tr></thead>
+      <tbody>
+        {% for r in top %}
+        <tr><td>{{ r.name }}</td><td>{{ r.job_title }}</td><td><strong>{{ "%.2f"|format(r.overall_score) }}%</strong></td></tr>
+        {% else %}<tr><td colspan="3" class="empty-state">Run candidate analysis to generate rankings.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
 {% endblock %}

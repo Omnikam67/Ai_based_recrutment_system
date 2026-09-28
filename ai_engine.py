@@ -75,10 +75,29 @@ def analyze_candidate_for_job(candidate_id, job_id):
 
     # Existing skills from DB are also considered.
     existing_names = {x["skill_name"].lower() for x in existing}
+    existing_proficiency = {
+        x["skill_name"].lower(): x["proficiency"] for x in existing
+    }
     candidate_names = existing_names | {x.lower() for x in extracted}
 
-    matched = [x for x in required if x["skill_name"].lower() in candidate_names]
+    matched = [
+        {**x, "candidate_level": existing_proficiency.get(x["skill_name"].lower())}
+        for x in required if x["skill_name"].lower() in candidate_names
+    ]
     missing = [x for x in required if x["skill_name"].lower() not in candidate_names]
+    proficiency_rank = {"Beginner": 1, "Intermediate": 2, "Advanced": 3, "Expert": 4}
+    level_gaps = [
+        {
+            **skill,
+            "candidate_level": skill["candidate_level"],
+            "required_level": skill.get("required_level") or "Intermediate",
+        }
+        for skill in matched
+        if skill["candidate_level"] in proficiency_rank
+        and (skill.get("required_level") or "Intermediate") in proficiency_rank
+        and proficiency_rank[skill["candidate_level"]]
+        < proficiency_rank[skill.get("required_level") or "Intermediate"]
+    ]
 
     skill_score = (len(matched) / max(1, len(required))) * 100
     req_exp = float(job.get("min_experience") or 0)
@@ -117,6 +136,11 @@ def analyze_candidate_for_job(candidate_id, job_id):
                 INSERT INTO skill_gaps(candidate_id, job_id, skill_id, required_level, candidate_level, gap_level)
                 VALUES (%s,%s,%s,%s,'None','High')
             """, (candidate_id, job_id, x["skill_id"], x["required_level"]))
+        for x in level_gaps:
+            cur.execute("""
+                INSERT INTO skill_gaps(candidate_id, job_id, skill_id, required_level, candidate_level, gap_level)
+                VALUES (%s,%s,%s,%s,%s,'Medium')
+            """, (candidate_id, job_id, x["skill_id"], x["required_level"], x["candidate_level"]))
         db.commit()
     except Exception:
         db.rollback()
@@ -137,6 +161,7 @@ def analyze_candidate_for_job(candidate_id, job_id):
         "job": job,
         "matched": matched,
         "missing": missing,
+        "level_gaps": level_gaps,
         "skill_score": round(skill_score, 2),
         "experience_score": round(experience_score, 2),
         "education_score": round(education_score, 2),

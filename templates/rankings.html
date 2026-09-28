@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-header"><div><p class="eyebrow">AI MATCHING</p><h1>Candidate ranking</h1><p>Select a job to compare applicants using the existing match model.</p></div></section>
+<div class="job-grid">
+  {% for job in jobs %}
+  <article class="job-card">
+    <div class="job-card-heading"><div><h2>{{ job.job_title }}</h2><p>{{ job.company }}</p></div><span class="status-badge {{ job.status|lower }}">{{ job.status }}</span></div>
+    <div class="job-meta"><span>{{ job.location or 'Location not specified' }}</span></div>
+    <div class="job-actions"><a class="btn" href="{{ url_for('rank', job_id=job.job_id) }}">View ranking</a></div>
+  </article>
+  {% else %}<div class="panel empty-state">Add a job to start reviewing candidate matches.</div>{% endfor %}
+</div>
+{% endblock %}
