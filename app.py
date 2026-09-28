@@ -8,7 +8,7 @@ app = Flask(__name__)
 app.secret_key = "change-this-secret-key"
 
 HR_ROUTES = {"dashboard", "candidates", "add_candidate", "jobs", "add_job", "applications", "update_application_status", "apply_to_job", "analyze", "rank", "apply", "skills", "edit_skill", "delete_job", "interviews", "rankings", "hr_skill_gap"}
-USER_ROUTES = {"user_dashboard", "my_applications", "user_apply", "candidate_jobs", "user_profile", "user_skills", "edit_user_skill", "user_skill_gap", "delete_user_profile"}
+USER_ROUTES = {"user_dashboard", "my_applications", "user_apply", "candidate_jobs", "user_profile", "user_skills", "edit_user_skill", "user_skill_gap", "delete_user_profile", "delete_user_skill"}
 
 
 def is_candidate_role(role):
@@ -371,6 +371,43 @@ def edit_user_skill(skill_id):
 
     cur.close(); db.close()
     return render_template("edit_user_skill.html", skill=skill)
+
+
+@app.route("/user/skills/<int:skill_id>/delete", methods=["POST"])
+def delete_user_skill(skill_id):
+    candidate_id = get_current_candidate_id()
+    redirect_endpoint = "user_profile" if request.form.get("return_to") == "profile" else "user_skills"
+    db = get_db()
+    cur = db.cursor(dictionary=True)
+    try:
+        cur.execute("""
+            SELECT s.skill_name
+            FROM candidate_skills cs JOIN skills s ON s.skill_id=cs.skill_id
+            WHERE cs.candidate_id=%s AND cs.skill_id=%s
+        """, (candidate_id, skill_id))
+        skill = cur.fetchone()
+        if not skill:
+            flash("That skill is not part of your profile.", "warning")
+            return redirect(url_for(redirect_endpoint))
+
+        cur.execute("DELETE FROM candidate_skills WHERE candidate_id=%s AND skill_id=%s",
+                    (candidate_id, skill_id))
+        cur.execute("DELETE FROM skill_gaps WHERE candidate_id=%s AND skill_id=%s",
+                    (candidate_id, skill_id))
+        cur.execute("DELETE FROM recommendations WHERE candidate_id=%s AND skill_id=%s",
+                    (candidate_id, skill_id))
+        cur.execute("""
+            INSERT INTO activity_log(candidate_id, activity)
+            VALUES (%s, %s)
+        """, (candidate_id, f"Removed skill: {skill['skill_name']}"))
+        db.commit()
+        flash("Skill removed from your profile.", "success")
+    except Exception as e:
+        db.rollback()
+        flash(f"Could not remove skill: {e}", "danger")
+    finally:
+        cur.close(); db.close()
+    return redirect(url_for(redirect_endpoint))
 
 
 @app.route("/user/skill-gap")
